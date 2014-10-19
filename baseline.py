@@ -21,10 +21,10 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tag.simplify import simplify_wsj_tag
 
+# @param file = relative pathname of an ascii or utf-8 text file
 # Returns the contents of the specified text file separated by lines.
-# Encodes the file from utf-8.
 def load_file(file):
-    f = codecs.open(file, encoding='utf-8')
+    f = codecs.open(file, encoding='utf-8') # also works for ascii files
     lines = [line.strip() for line in f.readlines()]
     f.close()
 
@@ -33,6 +33,8 @@ def load_file(file):
 
     return lines
 
+# @param text = list of strings
+# Returns a set of (word, part-of-speech) tuples
 def extract_nouns(text):
     tokens = [' '.join(text)][0].split()
     tagged_sent = nltk.pos_tag(tokens)
@@ -45,6 +47,8 @@ def extract_noun_tokens(tokens):
     return collections.Counter(token[0] for token in tokens if token[1] == 'N' and
                                not token[0] in stopwords.words('english'))
 
+# @param *_tokens = list of (word, part-of-speech) tuples
+# @param num_tokens = extracts this many nouns from each set of tokens (in order of decreasing frequency)
 # Returns (list of words underrepresented in english, list of words underrepresented in foreign language).
 def compare_most_frequent_tokens(english_tokens, foreign_tokens, num_tokens):
     english_counts = collections.Counter(token[0] for token in english_tokens if token[1] == 'N')
