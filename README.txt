@@ -8,3 +8,8 @@ mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
 source /path/to/the/sql/script/load-trip-data.sql
+
+Python packages setup
+======================
+sudo pip install -r requirements.txt
+

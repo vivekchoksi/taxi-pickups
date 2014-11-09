@@ -34,3 +34,4 @@ IGNORE 1 ROWS;
 
 # Add an `id` field as the first column in the table.
 ALTER TABLE  `trip_data` ADD  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST;
+
