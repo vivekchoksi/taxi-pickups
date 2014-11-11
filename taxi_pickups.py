@@ -51,6 +51,9 @@ def evaluatePredictions(true_num_pickups, predicted_num_pickups):
     '''
     assert(len(true_num_pickups) == len(predicted_num_pickups))
 
+    print 'True number of pickups:\t\t' + str(true_num_pickups)
+    print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+
     # Compute the RMSD
     rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
     print 'RMSD: %f' % rms

@@ -41,12 +41,11 @@ class Baseline(taxi_pickups.Model):
                             "HOUR(start_datetime) = %d AND " \
                             "zone_id = %d" \
                             % (pickup_time.hour, zone_id)
-            print "Querying 'trip_data': " + query_string
+            # print "Querying 'trip_data': " + query_string
             cursor.execute(query_string)
             db.commit()
             row = cursor.fetchone()
             if row is not None and row[0] is not None:
-                print 'Average number of pickups: ' + str(row[0])
                 num_pickups.append(float(row[0]))
             else:
                 num_pickups.append(0.0)
