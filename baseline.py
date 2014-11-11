@@ -1,135 +1,76 @@
-'''
-Baseline.py is a crude algorithm that finds discrepancies between
-the topics discussed in two text files (e.g. Wikipedia articles).
-The algorithm finds the most frequently occurring nouns in each article,
-and computes the symmetric difference.
-
-Sample usage:
-baseline.py article_en.txt article_fr.txt
-
-    Description:
-    article_en.txt = English Wikipedia article
-    article_fr.txt = French Wikipedia article translated into English
-
-'''
-import sys
-import codecs
-import collections
-import re
-
-import nltk
-from nltk.corpus import stopwords
-from nltk.tag.simplify import simplify_wsj_tag
-
-# @param file = relative pathname of an ascii or utf-8 text file
-# Returns the contents of the specified text file separated by lines.
-def load_file(file):
-    f = codecs.open(file, encoding='utf-8') # also works for ascii files
-    lines = [line.strip() for line in f.readlines()]
-    f.close()
-
-    #remove all symbols
-    lines = [(re.sub(r'[^\w ]', '', line)) for line in lines]
-
-    return lines
-
-# @param text = list of strings
-# Returns a set of (word, part-of-speech) tuples
-def extract_nouns(text):
-    tokens = [' '.join(text)][0].split()
-    tagged_sent = nltk.pos_tag(tokens)
-    simplified = [(word, simplify_wsj_tag(tag)) for word, tag in tagged_sent]
-    return simplified
-
-# @param tokens = list of (word, part-of-speech) tuples
-# Returns a Counter containing all the nouns that are not stop words.
-def extract_noun_tokens(tokens):
-    return collections.Counter(token[0] for token in tokens if token[1] == 'N' and
-                               not token[0] in stopwords.words('english'))
-
-# @param *_tokens = list of (word, part-of-speech) tuples
-# @param num_tokens = extracts this many nouns from each set of tokens (in order of decreasing frequency)
-# Returns (list of words underrepresented in english, list of words underrepresented in foreign language).
-def compare_most_frequent_tokens(english_tokens, foreign_tokens, num_tokens):
-    english_counts = collections.Counter(token[0] for token in english_tokens if token[1] == 'N')
-    foreign_counts = collections.Counter(token[0] for token in foreign_tokens if token[1] == 'N')
-
-    underrepresented_in_english = (foreign_counts - english_counts).most_common(num_tokens)
-    underrepresented_in_foreign = (english_counts - foreign_counts).most_common(num_tokens)
-
-    return [token[0] for token in underrepresented_in_english], \
-           [token[0] for token in underrepresented_in_foreign]
-
-def main():
-    args = sys.argv
-    if len(args) < 3:
-        print 'Usage: baseline.py <english_file> <translated_foreign_file>'
-        sys.exit(1)
-
-    # load input files
-    english_text = load_file(args[1])
-    foreign_text = load_file(args[2])
-
-    # tokenize, strip stop words, and extract nouns (and also other POS?)
-    english_tokens = extract_nouns(english_text)
-    foreign_tokens = extract_nouns(foreign_text)
-
-    # compare most frequent nouns in each article
-    (underrepresented_in_english, underrepresented_in_foreign) = \
-        compare_most_frequent_tokens(english_tokens, foreign_tokens, 5)
-
-    print 'Underrepresented in english:', underrepresented_in_english
-    print 'Underrepresented in foreign:', underrepresented_in_foreign
-
-if __name__ == '__main__':
-    main()
-=======
 #!/usr/bin/python
 import MySQLdb
 import datetime
+import os
 
-# connect
-db = MySQLdb.connect(host="localhost", user="root", passwd="",
-db="taxi_pickups")
+import taxi_pickups
 
-cursor = db.cursor()
+class Baseline(taxi_pickups.Model):
+    def train(self):
+        '''
+        The SQL script to generate the aggregated pickups table is commented out
+        because we only need to run it once.
 
+        See taxi_pickups.Model for comments on the parameters and return value.
+        '''
 
+        # Note: this line of code isn't tested yet.
+        # os.system('mysql -u root < pickups-aggregated.sql')
+        pass
 
-def getNumPickups(start_time, duration, start_latitude, start_longitude, side_length):
-  # Format start and end time strings.
-  datetime_format = "%Y-%m-%d %H:%M:%S"
-  end_time = start_time + duration
-  start_time_string = start_time.strftime(datetime_format)
-  end_time_string = end_time.strftime(datetime_format)
+    def test(self, test_data):
+        '''
+        Predicts the number of pickups at the specified time and location, within a 1 hour interval
+        and 0.01 x 0.01 degrees lat/long box.
 
-  # Initialize end latitude and longitude variables.
-  end_latitude = start_latitude + side_length
-  end_longitude= start_longitude + side_length
+        See taxi_pickups.Model for comments on the parameters and return value.
+        '''
+        # Connect to the db.
+        db = MySQLdb.connect(host="localhost", user="root", passwd="",  db="taxi_pickups")
+        cursor = db.cursor()
 
-  query_string = "SELECT COUNT(*) FROM trip_data WHERE " \
-                    "`pickup_datetime` between '%s' AND '%s' AND " \
-                    "`pickup_longitude` >= %f AND " \
-                    "`pickup_longitude` < %f AND " \
-                    "`pickup_latitude` >= %f AND " \
-                    "`pickup_latitude` < %f" \
-                  % (start_time_string, end_time_string, \
-                     start_longitude, end_longitude, \
-                     start_latitude, end_latitude)
+        num_pickups = []
 
-  print "Querying `trip_data`: " + query_string
-  cursor.execute(query_string_trivial)
-  db.commit()
-  return int(cursor.fetchone()[0])
+        for pickup_time, pickup_lat, pickup_long in test_data:
+            # TODO we should put the lat/long ==> zone_id logic EITHER in the database OR in Python.
+            zone_id = int(
+                            int(round(pickup_lat * 100) - 40 * 100) * 200 + \
+                            int(round(pickup_long * 100) + 75 * 100)
+                        )
+            query_string = "SELECT AVG(num_pickups) FROM pickups_aggregated WHERE " \
+                            "HOUR(start_datetime) = %d AND " \
+                            "zone_id = %d" \
+                            % (pickup_time.hour, zone_id)
+            print "Querying 'trip_data': " + query_string
+            cursor.execute(query_string)
+            db.commit()
+            row = cursor.fetchone()
+            if row is not None and row[0] is not None:
+                print 'Average number of pickups: ' + str(row[0])
+                num_pickups.append(float(row[0]))
+            else:
+                num_pickups.append(0.0)
 
-# execute SQL select statement
-start_time = datetime.datetime(2013, 1, 1, 1, 1, 1, 1)
-num_pickups = getNumPickups(
-  start_time=start_time,
-  duration=datetime.timedelta(hours=1),
-  start_latitude=40.75,
-  start_longitude=-73.95,
-  side_length=0.05,
-)
+        return num_pickups
 
-print num_pickups
+    def generateTestData(self):
+        '''
+        See taxi_pickups.Model for comments on the parameters and return value.
+        '''
+        # TODO ********************
+        # TODO ** Automate this! **
+        # TODO ********************
+
+        # TODO We need to split pickups_aggregated into train, dev, and test sets.
+        def zoneIdToLat(zone_id):
+            return (int(zone_id) / 200 + 40 * 100) / 100.0
+
+        def zoneIdToLong(zone_id):
+            return (int(zone_id) % 200 - 75 * 100) / 100.0
+
+        test_data = [(datetime.datetime(2013, 1, 27, 16, 11, 12, 30), zoneIdToLat(13326), zoneIdToLong(13326)),
+                     (datetime.datetime(2013, 1, 1, 2, 11, 12, 30), zoneIdToLat(12922), zoneIdToLong(12922)),
+                     (datetime.datetime(2013, 1, 15, 2, 11, 12, 30), zoneIdToLat(20), zoneIdToLong(20))]
+        true_num_pickups = [6, 16, 0]
+
+        return test_data, true_num_pickups
