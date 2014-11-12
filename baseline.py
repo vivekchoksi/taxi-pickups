@@ -6,19 +6,21 @@ import os
 import taxi_pickups
 
 class Baseline(taxi_pickups.Model):
-    def train(self):
+    def train(self, dataset):
         '''
         The SQL script to generate the aggregated pickups table is commented out
         because we only need to run it once.
 
         See taxi_pickups.Model for comments on the parameters and return value.
         '''
+        # Get training examples from dataset
+        # Feed them to model and train the model
 
         # Note: this line of code isn't tested yet.
         # os.system('mysql -u root < pickups-aggregated.sql')
         pass
 
-    def test(self, test_data):
+    def predict(self, test_data):
         '''
         Predicts the number of pickups at the specified time and location, within a 1 hour interval
         and 0.01 x 0.01 degrees lat/long box.

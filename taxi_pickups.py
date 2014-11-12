@@ -10,18 +10,19 @@ class Model(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def train(self):
+    def train(self, dataset):
         '''
-        Trains the learning model on the list of training examples provided.
+        Trains the learning model on the list of training examples provided in
+        the dataset.
         '''
         pass
 
     @abstractmethod
-    def test(self, test_data):
+    def predict(self, test_example):
         '''
-        Predicts the number of pickups for each test example provided.
+        Predicts the number of pickups for the test example provided.
 
-        :param test_data: List of tuples of the form (pickup_datetime, pickup_lat, pickup_long), where
+        :param test_example: List of tuples of the form (pickup_datetime, pickup_lat, pickup_long), where
                     pickup_datetime is a datetime object, and
                     pickup_[lat,long] are floats.
 
@@ -41,6 +42,36 @@ class Model(object):
         '''
         pass
 
+# Interface for our learning models.
+class Dataset(object):
+
+    def __init__(self, train_fraction, dataset_size):
+        self.train_fraction = train_fraction
+        self.dataset_size = dataset_size
+
+    def getTrainExample(self, batch_size):
+        '''
+        :param batch_size: number of training examples to return
+        :return: list of training examples
+        '''
+        pass
+
+    def getTestExample(self):
+        pass
+
+class Evaluator(object):
+
+    def __init__(self, model, dataset):
+        self.model = model
+        self.dataset = dataset
+
+    def evaluate(self):
+        # Get testing examples from dataset
+        # Feed them to model and predict num pickups
+        # Keep track of necessary statistics and metrics
+        # Print statistics and performance
+        pass
+
 def evaluatePredictions(true_num_pickups, predicted_num_pickups):
     '''
     Prints some metrics on how well the model performed, including the RMSD.
@@ -58,6 +89,11 @@ def evaluatePredictions(true_num_pickups, predicted_num_pickups):
     rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
     print 'RMSD: %f' % rms
 
+def getModel(modelName):
+    if modelName == 'baseline':
+        return baseline.Baseline()
+    raise Exception("No model with name %s" % modelName)
+
 def main():
     args = sys.argv
     if len(args) < 2:
@@ -65,8 +101,7 @@ def main():
         exit(1)
 
     # Instantiate the specified learning model.
-    if args[1] == 'baseline':
-        model = baseline.Baseline()
+    model = getModel(args[1])
 
     # Train the model.
     model.train()
