@@ -42,7 +42,7 @@ class Model(object):
         '''
         pass
 
-# Interface for our learning models.
+# The `Dataset` class interfaces with the data.
 class Dataset(object):
 
     def __init__(self, train_fraction, dataset_size):
@@ -59,6 +59,7 @@ class Dataset(object):
     def getTestExample(self):
         pass
 
+# The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
 
     def __init__(self, model, dataset):
@@ -70,24 +71,31 @@ class Evaluator(object):
         # Feed them to model and predict num pickups
         # Keep track of necessary statistics and metrics
         # Print statistics and performance
-        pass
 
-def evaluatePredictions(true_num_pickups, predicted_num_pickups):
-    '''
-    Prints some metrics on how well the model performed, including the RMSD.
+        # Test the model.
+        test_data, true_num_pickups = self.model.generateTestData()
+        predicted_num_pickups = self.model.predict(test_data)
 
-    :param predicted_num_pickups: List of predicted num_pickups.
-    :param true_num_pickups: List of observed num_pickups.
+        # Evaluate the predictions.
+        self.evaluatePredictions(true_num_pickups, predicted_num_pickups)
 
-    '''
-    assert(len(true_num_pickups) == len(predicted_num_pickups))
+    def evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
+        '''
+        Prints some metrics on how well the model performed, including the RMSD.
 
-    print 'True number of pickups:\t\t' + str(true_num_pickups)
-    print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+        :param predicted_num_pickups: List of predicted num_pickups.
+        :param true_num_pickups: List of observed num_pickups.
 
-    # Compute the RMSD
-    rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
-    print 'RMSD: %f' % rms
+        '''
+        assert(len(true_num_pickups) == len(predicted_num_pickups))
+
+        print 'True number of pickups:\t\t' + str(true_num_pickups)
+        print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+
+        # Compute the RMSD
+        rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
+        print 'RMSD: %f' % rms
+
 
 def getModel(modelName):
     if modelName == 'baseline':
@@ -102,16 +110,15 @@ def main():
 
     # Instantiate the specified learning model.
     model = getModel(args[1])
+    dataset = Dataset(0.7, 20)
+    evaluator = Evaluator(model, dataset)
 
     # Train the model.
-    model.train()
+    model.train(dataset)
 
-    # Test the model.
-    test_data, true_num_pickups = model.generateTestData()
-    predicted_num_pickups = model.test(test_data)
+    # Evaluate the model on data from the test set.
+    evaluator.evaluate()
 
-    # Evaluate the predictions.
-    evaluatePredictions(true_num_pickups, predicted_num_pickups)
 
 if __name__ == '__main__':
     main()
