@@ -1,82 +1,179 @@
 import sys
-from abc import ABCMeta, abstractmethod
+import MySQLdb
 from sklearn.metrics import mean_squared_error
 from math import sqrt
+from models import *
 
-import baseline
+class Database(object):
 
-# Interface for our learning models.
-class Model(object):
-    __metaclass__ = ABCMeta
+    def __init__(self):
+        self.db = MySQLdb.connect(
+            host="localhost", user="root", passwd="",  db=Const.DATABASE_NAME)
 
-    @abstractmethod
-    def train(self):
+    def execute_query(self, query_string, fetch_all=True):
         '''
-        Trains the learning model on the list of training examples provided.
+        :param query_string: sql query as a query_string
+        :param fetch_all: True if you want all the results or false if you want
+            only one result
+
+        :return: list of rows each represented as a dict - a mapping from column
+            names to values
         '''
-        pass
+        cursor = self.db.cursor()
+        cursor.execute(query_string)
+        self.db.commit()
+        if fetch_all:
+            tuple_results = cursor.fetchall()
+        else:
+            tuple_results = [cursor.fetchone()]
+            if (None,) in tuple_results:
+                tuple_results.remove((None,))
+        results = []
+        for i, row_tuple in enumerate(tuple_results):
+            results.append({
+                col_tuple[0]: row_tuple[x] \
+                for x, col_tuple in enumerate(cursor.description)
+            })
+        return results
 
-    @abstractmethod
-    def test(self, test_data):
-        '''
-        Predicts the number of pickups for each test example provided.
-
-        :param test_data: List of tuples of the form (pickup_datetime, pickup_lat, pickup_long), where
-                    pickup_datetime is a datetime object, and
-                    pickup_[lat,long] are floats.
-
-        :return: List of the predicted number of pickups, arranged in the same order as test_data.
-        '''
-        pass
-
-    @abstractmethod
-    def generateTestData(self):
-        '''
-        Generates the data we use to evaluate our learning models.
-
-        :return: (test_data, true_num_pickups), where
-                    test_data is a list of tuples of the form (pickup_datetime, pickup_lat, pickup_long), and
-                    true_num_pickups is a list of the actual number of pickups observed
-                        (to be used to evaluate the predictions).
-        '''
-        pass
-
-def evaluatePredictions(true_num_pickups, predicted_num_pickups):
+# The `Dataset` class interfaces with the data.
+class Dataset(object):
     '''
-    Prints some metrics on how well the model performed, including the RMSD.
+    Usage:
+        dataset = Dataset(0.7, 20) # 14 examples in train set, 6 in test set
+        while dataset.hasMoreTrainExamples():
+            train_examples = dataset.getTrainExamples(batch_size=2)
+            # Do something with the training examples...
 
-    :param predicted_num_pickups: List of predicted num_pickups.
-    :param true_num_pickups: List of observed num_pickups.
-
+        while dataset.hasMoreTestExamples():
+            test_example = dataset.getTestExample()
+            # Do something with the test example...
     '''
-    assert(len(true_num_pickups) == len(predicted_num_pickups))
 
-    print 'True number of pickups:\t\t' + str(true_num_pickups)
-    print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+    def __init__(self, train_fraction, dataset_size, database, table_name):
+        self.db = database
 
-    # Compute the RMSD
-    rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
-    print 'RMSD: %f' % rms
+        # The id of the last examples in the train and test set, respectively.
+        self.last_train_id = int(train_fraction * dataset_size)
+        self.last_test_id = dataset_size
 
-def main():
-    args = sys.argv
+        # The id of the next example to be fetched.
+        self.current_example_id = 1
+        self.table_name = table_name # table to read examples from
+
+    def hasMoreTrainExamples(self):
+        return self.current_example_id <= self.last_train_id
+
+    def hasMoreTestExamples(self):
+        return self.current_example_id <= self.last_test_id
+
+    def getTrainExamples(self, batch_size=1):
+        '''
+        :param batch_size: number of training examples to return
+        :return: training examples represented as a list of dicts
+        '''
+        if self.current_example_id + batch_size - 1 > self.last_train_id:
+            batch_size = self.last_train_id - self.current_example_id + 1
+
+        examples = self._getExamples(
+            self.current_example_id, num_examples=batch_size)
+        self.current_example_id += batch_size
+        return examples
+
+    def getTestExample(self):
+        '''
+        :return: test example, represented as a dict.
+        '''
+        if self.current_example_id > self.last_test_id:
+            raise Exception("Cannot access example %d: outside specified " \
+                            "dataset size range of %d." \
+                            % (self.current_example_id, self.last_test_id))
+
+        if self.current_example_id <= self.last_train_id:
+            self.current_example_id = self.last_train_id + 1
+
+        example = self._getExamples(self.current_example_id, num_examples=1)[0]
+        self.current_example_id += 1
+        return example
+
+    def _getExamples(self, start_id, num_examples=1):
+        '''
+        :param start_id: id of first row to fetch
+        :param num_examples: number of examples to return
+        :return: examples (i.e. rows) from the data table represented as a dicts
+            that map column names to column values
+        '''
+        end_id = start_id + num_examples - 1
+
+        query_string = "SELECT * FROM %s WHERE id BETWEEN %d AND %d" \
+                        % (self.table_name, start_id, end_id)
+
+        return self.db.execute_query(query_string)
+
+# The `Evaluator` class evaluates a trained model.
+class Evaluator(object):
+
+    def __init__(self, model, dataset):
+        self.model = model
+        self.dataset = dataset
+
+    def evaluate(self):
+        '''
+        Evaluate the model on a test set, and print out relevant statistics
+        (e.g. RMSD).
+        '''
+
+        # Generate a predicted number of pickups for every example in the test
+        # data.
+        predicted_num_pickups = []
+        true_num_pickups = []
+        while self.dataset.hasMoreTestExamples():
+            test_example = self.dataset.getTestExample()
+            predicted_num_pickups.append(self.model.predict(test_example))
+            true_num_pickups.append(test_example['num_pickups'])
+
+        # Evaluate the predictions.
+        self.evaluatePredictions(true_num_pickups, predicted_num_pickups)
+
+    def evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
+        '''
+        Prints some metrics on how well the model performed, including the RMSD.
+
+        :param predicted_num_pickups: List of predicted num_pickups.
+        :param true_num_pickups: List of observed num_pickups.
+
+        '''
+        assert(len(true_num_pickups) == len(predicted_num_pickups))
+
+        print 'True number of pickups:\t\t' + str(true_num_pickups)
+        print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+
+        # Compute the RMSD
+        rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
+        print 'RMSD: %f' % rms
+
+
+def getModel(model_name, database):
+    if model_name == 'baseline':
+        return Baseline(database)
+    raise Exception("No model with name %s" % model_name)
+
+def main(args):
     if len(args) < 2:
         print 'Usage: taxi_pickups model'
         exit(1)
 
+    database = Database()
     # Instantiate the specified learning model.
-    if args[1] == 'baseline':
-        model = baseline.Baseline()
+    model = getModel(args[1], database)
+    dataset = Dataset(0.7, 200, database, Const.AGGREGATED_PICKUPS)
+    evaluator = Evaluator(model, dataset)
 
     # Train the model.
-    model.train()
+    model.train(dataset)
 
-    # Test the model.
-    test_data, true_num_pickups = model.generateTestData()
-    predicted_num_pickups = model.test(test_data)
-
-    # Evaluate the predictions.
-    evaluatePredictions(true_num_pickups, predicted_num_pickups)
+    # Evaluate the model on data from the test set.
+    evaluator.evaluate()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
