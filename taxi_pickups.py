@@ -22,7 +22,12 @@ class Database(object):
         cursor = self.db.cursor()
         cursor.execute(query_string)
         self.db.commit()
-        tuple_results = cursor.fetchall() if fetch_all else cursor.fetchone()
+        if fetch_all:
+            tuple_results = cursor.fetchall()
+        else:
+            tuple_results = [cursor.fetchone()]
+            if None in tuple_results:
+                tuple_results.remove(None)
         results = []
         for i, row_tuple in enumerate(tuple_results):
             results.append({

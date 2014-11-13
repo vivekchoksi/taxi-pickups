@@ -65,18 +65,17 @@ class Baseline(Model):
 
         See Model for comments on the parameters and return value.
         '''
-        num_pickups = None
-        pickup_time = test_example['']
-        query_string = "SELECT AVG(num_pickups) FROM %s WHERE " \
-                        "HOUR(start_datetime) = %d AND " \
-                        "zone_id = %d" \
-                        % (self.table_name, pickup_time.hour, zone_id)
+        num_pickups = 0.0
+        pickup_time = test_example['start_datetime']
+        example_id, zone_id = test_example['id'], test_example['zone_id']
+        query_string = ("SELECT AVG(num_pickups) as avg_num_pickups FROM %s "
+                        "WHERE HOUR(start_datetime) = %d AND zone_id = %d AND "
+                        "id <> %d") % \
+                        (self.table_name, pickup_time.hour, zone_id, example_id)
         # print "Querying 'trip_data': " + query_string
-        row = self.db.execute_query(query_string)
-        if row is not None and row[0] is not None:
-            num_pickups = float(row[0])
-        else:
-            num_pickups = 0.0
+        results = self.db.execute_query(query_string, fetch_all=False)
+        if len(results) == 1:
+            num_pickups = float(results[0]['avg_num_pickups'])
 
         return num_pickups
 
