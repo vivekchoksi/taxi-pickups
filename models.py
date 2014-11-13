@@ -66,7 +66,7 @@ class Baseline(Model):
         See Model for comments on the parameters and return value.
         '''
         num_pickups = None
-        pickup_time, pickup_lat, pickup_long = test_example
+        pickup_time = test_example['']
         query_string = "SELECT AVG(num_pickups) FROM %s WHERE " \
                         "HOUR(start_datetime) = %d AND " \
                         "zone_id = %d" \

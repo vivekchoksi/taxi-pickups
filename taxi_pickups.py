@@ -11,6 +11,14 @@ class Database(object):
             host="localhost", user="root", passwd="",  db=Const.DATABASE_NAME)
 
     def execute_query(self, query_string, fetch_all=True):
+        '''
+        :param query_string: sql query as a query_string
+        :param fetch_all: True if you want all the results or false if you want
+            only one result
+
+        :return: list of rows each represented as a dict - a mapping from column
+            names to values
+        '''
         cursor = self.db.cursor()
         cursor.execute(query_string)
         self.db.commit()
@@ -57,7 +65,7 @@ class Dataset(object):
     def getTrainExamples(self, batch_size=1):
         '''
         :param batch_size: number of training examples to return
-        :return: training examples represented as a list of tuples
+        :return: training examples represented as a list of dicts
         '''
         if self.current_example_id + batch_size - 1 > self.last_train_id:
             batch_size = self.last_train_id - self.current_example_id + 1
@@ -69,7 +77,7 @@ class Dataset(object):
 
     def getTestExample(self):
         '''
-        :return: test example, represented as a tuple.
+        :return: test example, represented as a dict.
         '''
         if self.current_example_id > self.last_test_id:
             raise Exception("Cannot access example %d: outside specified " \
@@ -87,8 +95,8 @@ class Dataset(object):
         '''
         :param start_id: id of first row to fetch
         :param num_examples: number of examples to return
-        :return: examples (i.e. rows) from the data table represented as a list
-                    of tuples.
+        :return: examples (i.e. rows) from the data table represented as a dicts
+            that map column names to column values
         '''
         end_id = start_id + num_examples - 1
 
