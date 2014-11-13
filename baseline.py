@@ -20,37 +20,38 @@ class Baseline(taxi_pickups.Model):
         # os.system('mysql -u root < pickups-aggregated.sql')
         pass
 
-    def predict(self, test_data):
+    def predict(self, test_example):
         '''
         Predicts the number of pickups at the specified time and location, within a 1 hour interval
         and 0.01 x 0.01 degrees lat/long box.
 
         See taxi_pickups.Model for comments on the parameters and return value.
         '''
+        num_pickups = None
+
         # Connect to the db.
         db = MySQLdb.connect(host="localhost", user="root", passwd="",  db="taxi_pickups")
         cursor = db.cursor()
 
-        num_pickups = []
+        pickup_time, pickup_lat, pickup_long = test_example
 
-        for pickup_time, pickup_lat, pickup_long in test_data:
-            # TODO we should put the lat/long ==> zone_id logic EITHER in the database OR in Python.
-            zone_id = int(
-                            int(round(pickup_lat * 100) - 40 * 100) * 200 + \
-                            int(round(pickup_long * 100) + 75 * 100)
-                        )
-            query_string = "SELECT AVG(num_pickups) FROM pickups_aggregated WHERE " \
-                            "HOUR(start_datetime) = %d AND " \
-                            "zone_id = %d" \
-                            % (pickup_time.hour, zone_id)
-            # print "Querying 'trip_data': " + query_string
-            cursor.execute(query_string)
-            db.commit()
-            row = cursor.fetchone()
-            if row is not None and row[0] is not None:
-                num_pickups.append(float(row[0]))
-            else:
-                num_pickups.append(0.0)
+        # TODO we should put the lat/long ==> zone_id logic EITHER in the database OR in Python.
+        zone_id = int(
+                        int(round(pickup_lat * 100) - 40 * 100) * 200 + \
+                        int(round(pickup_long * 100) + 75 * 100)
+                    )
+        query_string = "SELECT AVG(num_pickups) FROM pickups_aggregated WHERE " \
+                        "HOUR(start_datetime) = %d AND " \
+                        "zone_id = %d" \
+                        % (pickup_time.hour, zone_id)
+        # print "Querying 'trip_data': " + query_string
+        cursor.execute(query_string)
+        db.commit()
+        row = cursor.fetchone()
+        if row is not None and row[0] is not None:
+            num_pickups = float(row[0])
+        else:
+            num_pickups = 0.0
 
         return num_pickups
 
