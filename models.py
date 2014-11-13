@@ -2,20 +2,53 @@
 import MySQLdb
 import datetime
 import os
+from abc import ABCMeta, abstractmethod
 
-import taxi_pickups
+# Interface for our learning models.
+class Model(object):
+    __metaclass__ = ABCMeta
 
-class Baseline(taxi_pickups.Model):
+    @abstractmethod
+    def train(self, dataset):
+        '''
+        Trains the learning model on the list of training examples provided in
+        the dataset.
+        '''
+        pass
+
+    @abstractmethod
+    def predict(self, test_example):
+        '''
+        Predicts the number of pickups for the test example provided.
+
+        :param test_example: Tuple of the form (pickup_datetime, pickup_lat, pickup_long), where
+                    pickup_datetime is a datetime object, and
+                    pickup_[lat,long] are floats.
+
+        :return: Predicted number of pickups for the test example.
+        '''
+        pass
+
+    @abstractmethod
+    def generateTestData(self):
+        '''
+        Generates the data we use to evaluate our learning models.
+
+        :return: (test_data, true_num_pickups), where
+                    test_data is a list of tuples of the form (pickup_datetime, pickup_lat, pickup_long), and
+                    true_num_pickups is a list of the actual number of pickups observed
+                        (to be used to evaluate the predictions).
+        '''
+        pass
+
+class Baseline(Model):
     def train(self, dataset):
         '''
         The SQL script to generate the aggregated pickups table is commented out
         because we only need to run it once.
 
-        See taxi_pickups.Model for comments on the parameters and return value.
+        See Model for comments on the parameters and return value.
         '''
-        # Get training examples from dataset
-        # Feed them to model and train the model
-
         # Note: this line of code isn't tested yet.
         # os.system('mysql -u root < pickups-aggregated.sql')
         pass
@@ -25,7 +58,7 @@ class Baseline(taxi_pickups.Model):
         Predicts the number of pickups at the specified time and location, within a 1 hour interval
         and 0.01 x 0.01 degrees lat/long box.
 
-        See taxi_pickups.Model for comments on the parameters and return value.
+        See Model for comments on the parameters and return value.
         '''
         num_pickups = None
 
