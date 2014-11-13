@@ -113,15 +113,19 @@ class Evaluator(object):
         self.dataset = dataset
 
     def evaluate(self):
-
-        # Test the model.
-        test_data, true_num_pickups = self.model.generateTestData()
+        '''
+        Evaluate the model on a test set, and print out relevant statistics
+        (e.g. RMSD).
+        '''
 
         # Generate a predicted number of pickups for every example in the test
         # data.
         predicted_num_pickups = []
-        for test_example in test_data:
+        true_num_pickups = []
+        while self.dataset.hasMoreTestExamples():
+            test_example = self.dataset.getTestExample()
             predicted_num_pickups.append(self.model.predict(test_example))
+            true_num_pickups.append(test_example['num_pickups'])
 
         # Evaluate the predictions.
         self.evaluatePredictions(true_num_pickups, predicted_num_pickups)
