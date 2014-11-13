@@ -4,8 +4,24 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 from models import *
 
-AGGREGATED_PICKUPS = 'pickups_aggregated'
-TRIP_DATA = 'trip_data'
+class Database(object):
+
+    def __init__(self):
+        self.db = MySQLdb.connect(
+            host="localhost", user="root", passwd="",  db=Const.DATABASE_NAME)
+
+    def execute_query(self, query_string, fetch_all=True):
+        cursor = self.db.cursor()
+        cursor.execute(query_string)
+        self.db.commit()
+        tuple_results = cursor.fetchall() if fetch_all else cursor.fetchone()
+        results = []
+        for i, row_tuple in enumerate(tuple_results):
+            results.append({
+                col_tuple[0]: row_tuple[x] \
+                for x, col_tuple in enumerate(cursor.description)
+            })
+        return results
 
 # The `Dataset` class interfaces with the data.
 class Dataset(object):
@@ -21,9 +37,8 @@ class Dataset(object):
             # Do something with the test example...
     '''
 
-    def __init__(self, train_fraction, dataset_size, table_name):
-        self.db = MySQLdb.connect(
-            host="localhost", user="root", passwd="",  db="taxi_pickups")
+    def __init__(self, train_fraction, dataset_size, database, table_name):
+        self.db = database
 
         # The id of the last examples in the train and test set, respectively.
         self.last_train_id = int(train_fraction * dataset_size)
@@ -75,16 +90,12 @@ class Dataset(object):
         :return: examples (i.e. rows) from the data table represented as a list
                     of tuples.
         '''
-        cursor = self.db.cursor()
         end_id = start_id + num_examples - 1
 
         query_string = "SELECT * FROM %s WHERE id BETWEEN %d AND %d" \
                         % (self.table_name, start_id, end_id)
 
-        cursor.execute(query_string)
-        self.db.commit()
-        return cursor.fetchall()
-
+        return self.db.execute_query(query_string)
 
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
@@ -125,9 +136,9 @@ class Evaluator(object):
         print 'RMSD: %f' % rms
 
 
-def getModel(model_name):
+def getModel(model_name, database):
     if model_name == 'baseline':
-        return Baseline()
+        return Baseline(database)
     raise Exception("No model with name %s" % model_name)
 
 def main(args):
@@ -135,9 +146,10 @@ def main(args):
         print 'Usage: taxi_pickups model'
         exit(1)
 
+    database = Database()
     # Instantiate the specified learning model.
-    model = getModel(args[1])
-    dataset = Dataset(0.7, 20, AGGREGATED_PICKUPS)
+    model = getModel(args[1], database)
+    dataset = Dataset(0.7, 20, database, Const.AGGREGATED_PICKUPS)
     evaluator = Evaluator(model, dataset)
 
     # Train the model.

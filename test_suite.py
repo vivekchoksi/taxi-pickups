@@ -5,6 +5,9 @@ import unittest
 
 class TestDataset(unittest.TestCase):
 
+    def setUp(self):
+        self.db = Database()
+
     def test_ids_0_7_20(self):
         self._train_ids_one_by_one(0.7, 20, 14, 6, 1, 1)
 
@@ -23,7 +26,8 @@ class TestDataset(unittest.TestCase):
     def _train_ids_one_by_one(self, train_fraction, dataset_size, 
         num_training_examples, num_test_examples, batch_size, last_batch_size):
 
-        data = Dataset(train_fraction, dataset_size, AGGREGATED_PICKUPS)
+        data = Dataset(
+            train_fraction, dataset_size, self.db, Const.TRIP_DATA)
         count = 1
         last = False
         while data.hasMoreTrainExamples():
@@ -34,14 +38,15 @@ class TestDataset(unittest.TestCase):
                 last = True
             else:
                 self.assertEquals(len(examples), batch_size)
-            self.assertEqual(examples[0][0], count)
-            count += len(examples)
+            for example in examples:
+                self.assertEqual(example['id'], count)
+                count += 1
 
         self.assertEqual(count, num_training_examples + 1)
 
         while data.hasMoreTestExamples():
             example = data.getTestExample()
-            self.assertEqual(example[0], count)
+            self.assertEqual(example['id'], count)
             count += 1
 
         self.assertEqual(count, num_training_examples + num_test_examples + 1)

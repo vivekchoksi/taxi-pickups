@@ -3,6 +3,7 @@ import MySQLdb
 import datetime
 import os
 from abc import ABCMeta, abstractmethod
+from const import Const
 
 # Interface for our learning models.
 class Model(object):
@@ -21,9 +22,7 @@ class Model(object):
         '''
         Predicts the number of pickups for the test example provided.
 
-        :param test_example: Tuple of the form (pickup_datetime, pickup_lat, pickup_long), where
-                    pickup_datetime is a datetime object, and
-                    pickup_[lat,long] are floats.
+        :param test_example: dict mapping feature names to feature values
 
         :return: Predicted number of pickups for the test example.
         '''
@@ -35,13 +34,19 @@ class Model(object):
         Generates the data we use to evaluate our learning models.
 
         :return: (test_data, true_num_pickups), where
-                    test_data is a list of tuples of the form (pickup_datetime, pickup_lat, pickup_long), and
-                    true_num_pickups is a list of the actual number of pickups observed
-                        (to be used to evaluate the predictions).
+            test_data is a list of tuples of the form 
+            (pickup_datetime, pickup_lat, pickup_long), and true_num_pickups is 
+            a list of the actual number of pickups observed (to be used to 
+            evaluate the predictions).
         '''
         pass
 
 class Baseline(Model):
+
+    def __init__(self, database):
+        self.db = database
+        self.table_name = Const.AGGREGATED_PICKUPS
+
     def train(self, dataset):
         '''
         The SQL script to generate the aggregated pickups table is commented out
@@ -55,32 +60,19 @@ class Baseline(Model):
 
     def predict(self, test_example):
         '''
-        Predicts the number of pickups at the specified time and location, within a 1 hour interval
-        and 0.01 x 0.01 degrees lat/long box.
+        Predicts the number of pickups at the specified time and location, 
+        within a 1 hour interval and 0.01 x 0.01 degrees lat/long box.
 
         See Model for comments on the parameters and return value.
         '''
         num_pickups = None
-
-        # Connect to the db.
-        db = MySQLdb.connect(host="localhost", user="root", passwd="",  db="taxi_pickups")
-        cursor = db.cursor()
-
         pickup_time, pickup_lat, pickup_long = test_example
-
-        # TODO we should put the lat/long ==> zone_id logic EITHER in the database OR in Python.
-        zone_id = int(
-                        int(round(pickup_lat * 100) - 40 * 100) * 200 + \
-                        int(round(pickup_long * 100) + 75 * 100)
-                    )
-        query_string = "SELECT AVG(num_pickups) FROM pickups_aggregated WHERE " \
+        query_string = "SELECT AVG(num_pickups) FROM %s WHERE " \
                         "HOUR(start_datetime) = %d AND " \
                         "zone_id = %d" \
-                        % (pickup_time.hour, zone_id)
+                        % (self.table_name, pickup_time.hour, zone_id)
         # print "Querying 'trip_data': " + query_string
-        cursor.execute(query_string)
-        db.commit()
-        row = cursor.fetchone()
+        row = self.db.execute_query(query_string)
         if row is not None and row[0] is not None:
             num_pickups = float(row[0])
         else:
