@@ -26,8 +26,8 @@ class Database(object):
             tuple_results = cursor.fetchall()
         else:
             tuple_results = [cursor.fetchone()]
-            if None in tuple_results:
-                tuple_results.remove(None)
+            if (None,) in tuple_results:
+                tuple_results.remove((None,))
         results = []
         for i, row_tuple in enumerate(tuple_results):
             results.append({
@@ -166,7 +166,7 @@ def main(args):
     database = Database()
     # Instantiate the specified learning model.
     model = getModel(args[1], database)
-    dataset = Dataset(0.7, 20, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.7, 200, database, Const.AGGREGATED_PICKUPS)
     evaluator = Evaluator(model, dataset)
 
     # Train the model.
