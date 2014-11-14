@@ -28,7 +28,8 @@ class TestDataset(unittest.TestCase):
 
         data = Dataset(
             train_fraction, dataset_size, self.db, Const.AGGREGATED_PICKUPS)
-        count = 1
+        last_id = 0
+        count = 0
         last = False
         while data.hasMoreTrainExamples():
             examples = data.getTrainExamples(batch_size)
@@ -39,17 +40,19 @@ class TestDataset(unittest.TestCase):
             else:
                 self.assertEquals(len(examples), batch_size)
             for example in examples:
-                self.assertEqual(example['id'], count)
+                self.assertTrue(example['id'] > last_id)
+                last_id = example['id']
                 count += 1
 
-        self.assertEqual(count, num_training_examples + 1)
+        self.assertEqual(count, num_training_examples)
 
         while data.hasMoreTestExamples():
             example = data.getTestExample()
-            self.assertEqual(example['id'], count)
+            self.assertTrue(example['id'] > last_id)
+            last_id = example['id']
             count += 1
 
-        self.assertEqual(count, num_training_examples + num_test_examples + 1)
+        self.assertEqual(count, num_training_examples + num_test_examples)
 
 class TestBaseline(unittest.TestCase):
 
@@ -60,10 +63,10 @@ class TestBaseline(unittest.TestCase):
 
     def test_basic_prediction(self):
         query_string = "SELECT * FROM %s WHERE id = %d" \
-                        % (self.table_name, 99595)
+                        % (self.table_name, 73727)
 
         test_example = self.db.execute_query(query_string)[0]
-        self.assertAlmostEqual(self.model.predict(test_example), 718.4667)
+        self.assertAlmostEqual(self.model.predict(test_example), 1961.3333)
 
 if __name__ == '__main__':
     unittest.main()

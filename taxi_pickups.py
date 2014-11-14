@@ -44,6 +44,10 @@ class Database(object):
 # The `Dataset` class interfaces with the data.
 class Dataset(object):
     '''
+    This class assumes that the mysql table used as the dataset is sorted such
+    that training examples always come before (i.e. have smaller ids) the test 
+    examples in the sorted order.
+
     Usage:
         dataset = Dataset(0.7, 20) # 14 examples in train set, 6 in test set
         while dataset.hasMoreTrainExamples():
@@ -57,23 +61,20 @@ class Dataset(object):
 
     def __init__(self, train_fraction, dataset_size, database, table_name):
         self.db = database
-
-        # The id of the last examples in the train and test set, respectively.
-        self.last_train_id = int(train_fraction * dataset_size)
-        self.last_test_id = dataset_size
-
-        # The id of the next example to be fetched.
-        self.current_example_id = 1
         self.table_name = table_name # table to read examples from
+        self.trainingExamplesLeft = int(train_fraction * dataset_size)
+        self.testingExamplesLeft = dataset_size - self.trainingExamplesLeft
+        self.last_train_id = self._getLastTrainID()
+        self.last_fetched_id = 0
 
     def hasMoreTrainExamples(self):
-        return self.current_example_id <= self.last_train_id
+        return self.trainingExamplesLeft > 0
 
     def hasMoreTestExamples(self):
-        return self.current_example_id <= self.last_test_id
+        return self.testingExamplesLeft > 0
 
     def switchToTestMode(self):
-        self.current_example_id = self.last_train_id + 1
+        self.last_fetched_id = self.last_train_id
 
     def getTrainExamples(self, batch_size=1):
         '''
@@ -81,43 +82,51 @@ class Dataset(object):
         :return: training examples represented as a list of dicts. These may be
             fewer than batch_size in case there are no more training examples.
         '''
-        if self.current_example_id + batch_size - 1 > self.last_train_id:
-            batch_size = self.last_train_id - self.current_example_id + 1
+        if not self.hasMoreTrainExamples():
+            raise Exception("No more training examples left.")
+        if batch_size > self.trainingExamplesLeft:
+            batch_size = self.trainingExamplesLeft
 
-        examples = self._getExamples(
-            self.current_example_id, num_examples=batch_size)
-        self.current_example_id += batch_size
+        examples = self._getExamples(batch_size)
+        self.trainingExamplesLeft -= batch_size
         return examples
 
     def getTestExample(self):
         '''
         :return: test example, represented as a dict.
         '''
-        if self.current_example_id > self.last_test_id:
-            raise Exception("Cannot access example %d: outside specified " \
-                            "dataset size range of %d." \
-                            % (self.current_example_id, self.last_test_id))
+        if not self.hasMoreTestExamples():
+            raise Exception("No more test examples left.")
 
-        if self.current_example_id <= self.last_train_id:
-            self.current_example_id = self.last_train_id + 1
+        if self.last_fetched_id < self.last_train_id:
+            self.switchToTestMode()
 
-        example = self._getExamples(self.current_example_id, num_examples=1)[0]
-        self.current_example_id += 1
+        example = self._getExamples(num_examples=1)[0]
+        self.testingExamplesLeft -= 1
         return example
 
-    def _getExamples(self, start_id, num_examples=1):
+    def _getExamples(self, num_examples=1):
         '''
         :param start_id: id of first row to fetch
         :param num_examples: number of examples to return
         :return: examples (i.e. rows) from the data table represented as a dicts
             that map column names to column values
         '''
-        end_id = start_id + num_examples - 1
+        query_string = ("SELECT * FROM %s WHERE id > %d AND num_pickups > 1 "
+                        "limit %d") \
+                        % (self.table_name, self.last_fetched_id, num_examples)
 
-        query_string = ("SELECT * FROM %s WHERE id BETWEEN %d AND %d") \
-                        % (self.table_name, start_id, end_id)
+        results = self.db.execute_query(query_string)
+        self.last_fetched_id = results[len(results) - 1]['id']
+        return results
 
-        return self.db.execute_query(query_string)
+    def _getLastTrainID(self):
+        query_string = ("SELECT MAX(id) as max_id FROM "
+                        "(SELECT id FROM %s WHERE "
+                        "num_pickups > 1 LIMIT %d) T") \
+                        % (self.table_name, self.trainingExamplesLeft)
+
+        return self.db.execute_query(query_string, fetch_all=False)[0]['max_id']
 
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
@@ -155,11 +164,12 @@ class Evaluator(object):
         '''
         assert(len(true_num_pickups) == len(predicted_num_pickups))
 
-        print 'True number of pickups:\t\t' + str(true_num_pickups)
-        print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
-
         # Compute the RMSD
         rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
+
+        # print 'True number of pickups:\t\t' + str(true_num_pickups)
+        # print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
+
         print 'RMSD: %f' % rms
 
 
@@ -174,7 +184,7 @@ def main(args):
         exit(1)
 
     database = Database()
-    dataset = Dataset(0.1, 200, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.9, 10000, database, Const.AGGREGATED_PICKUPS)
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)

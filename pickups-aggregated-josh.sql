@@ -56,7 +56,8 @@ GROUP BY CONCAT(
     FLOOR(pickup_longitude * 100), '_',
     FLOOR(pickup_latitude * 100), '_',
     DATE_FORMAT(pickup_datetime, '%Y-%m-%d %H:00:00')
-);
+)
+ORDER BY start_datetime;
 
 ALTER TABLE `pickups_aggregated` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
 KEY FIRST;

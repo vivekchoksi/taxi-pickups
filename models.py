@@ -57,8 +57,9 @@ class Baseline(Model):
         example_id, zone_id = test_example['id'], test_example['zone_id']
         query_string = ("SELECT AVG(num_pickups) as avg_num_pickups FROM %s "
                         "WHERE HOUR(start_datetime) = %d AND zone_id = %d AND "
-                        "id <> %d") % \
-                        (self.table_name, pickup_time.hour, zone_id, example_id)
+                        "start_datetime < '%s'") % \
+                        (self.table_name, pickup_time.hour, zone_id, 
+                        pickup_time)
         # print "Querying 'trip_data': " + query_string
         results = self.db.execute_query(query_string, fetch_all=False)
         if len(results) == 1:
