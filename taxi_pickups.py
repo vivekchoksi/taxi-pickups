@@ -180,7 +180,7 @@ def getModel(model_name, database, dataset):
 
 def main(args):
     if len(args) < 2:
-        print 'Usage: taxi_pickups model'
+        print 'Usage: taxi_pickups.py model'
         exit(1)
 
     database = Database()
