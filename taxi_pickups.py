@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 import MySQLdb
 from sklearn.metrics import mean_squared_error
@@ -17,7 +19,8 @@ class Database(object):
             only one result
 
         :return: list of rows each represented as a dict - a mapping from column
-            names to values
+            names to values. Column names will be what you name columns in case 
+            of derived columns such as avg() (using the 'as' keyword in sql)
         '''
         cursor = self.db.cursor()
         cursor.execute(query_string)
@@ -26,8 +29,10 @@ class Database(object):
             tuple_results = cursor.fetchall()
         else:
             tuple_results = [cursor.fetchone()]
-            if (None,) in tuple_results:
+            if (None,) in tuple_results: # get rid of NULL result
                 tuple_results.remove((None,))
+            elif None in tuple_results: # in case there was no result
+                tuple_results.remove(None)
         results = []
         for i, row_tuple in enumerate(tuple_results):
             results.append({
@@ -153,9 +158,9 @@ class Evaluator(object):
         print 'RMSD: %f' % rms
 
 
-def getModel(model_name, database):
+def getModel(model_name, database, dataset):
     if model_name == 'baseline':
-        return Baseline(database)
+        return Baseline(database, dataset)
     raise Exception("No model with name %s" % model_name)
 
 def main(args):
@@ -164,13 +169,13 @@ def main(args):
         exit(1)
 
     database = Database()
+    dataset = Dataset(0.1, 200, database, Const.AGGREGATED_PICKUPS)
     # Instantiate the specified learning model.
-    model = getModel(args[1], database)
-    dataset = Dataset(0.7, 200, database, Const.AGGREGATED_PICKUPS)
+    model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)
 
     # Train the model.
-    model.train(dataset)
+    model.train()
 
     # Evaluate the model on data from the test set.
     evaluator.evaluate()
