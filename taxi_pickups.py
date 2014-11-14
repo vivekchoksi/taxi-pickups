@@ -72,10 +72,14 @@ class Dataset(object):
     def hasMoreTestExamples(self):
         return self.current_example_id <= self.last_test_id
 
+    def switchToTestMode(self):
+        self.current_example_id = self.last_train_id + 1
+
     def getTrainExamples(self, batch_size=1):
         '''
         :param batch_size: number of training examples to return
-        :return: training examples represented as a list of dicts
+        :return: training examples represented as a list of dicts. These may be
+            fewer than batch_size in case there are no more training examples.
         '''
         if self.current_example_id + batch_size - 1 > self.last_train_id:
             batch_size = self.last_train_id - self.current_example_id + 1
@@ -110,7 +114,7 @@ class Dataset(object):
         '''
         end_id = start_id + num_examples - 1
 
-        query_string = "SELECT * FROM %s WHERE id BETWEEN %d AND %d" \
+        query_string = ("SELECT * FROM %s WHERE id BETWEEN %d AND %d") \
                         % (self.table_name, start_id, end_id)
 
         return self.db.execute_query(query_string)
@@ -132,6 +136,7 @@ class Evaluator(object):
         # data.
         predicted_num_pickups = []
         true_num_pickups = []
+        self.dataset.switchToTestMode()
         while self.dataset.hasMoreTestExamples():
             test_example = self.dataset.getTestExample()
             predicted_num_pickups.append(self.model.predict(test_example))
