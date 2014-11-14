@@ -10,10 +10,10 @@ class Model(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def train(self, dataset):
+    def train(self):
         '''
         Trains the learning model on the list of training examples provided in
-        the dataset.
+        the dataset (passed in through the constructor).
         '''
         pass
 
@@ -28,26 +28,13 @@ class Model(object):
         '''
         pass
 
-    @abstractmethod
-    def generateTestData(self):
-        '''
-        Generates the data we use to evaluate our learning models.
-
-        :return: (test_data, true_num_pickups), where
-            test_data is a list of tuples of the form 
-            (pickup_datetime, pickup_lat, pickup_long), and true_num_pickups is 
-            a list of the actual number of pickups observed (to be used to 
-            evaluate the predictions).
-        '''
-        pass
-
 class Baseline(Model):
 
-    def __init__(self, database):
+    def __init__(self, database, dataset):
         self.db = database
         self.table_name = Const.AGGREGATED_PICKUPS
 
-    def train(self, dataset):
+    def train(self):
         '''
         The SQL script to generate the aggregated pickups table is commented out
         because we only need to run it once.
@@ -78,25 +65,3 @@ class Baseline(Model):
             num_pickups = float(results[0]['avg_num_pickups'])
 
         return num_pickups
-
-    def generateTestData(self):
-        '''
-        See taxi_pickups.Model for comments on the parameters and return value.
-        '''
-        # TODO ********************
-        # TODO ** Automate this! **
-        # TODO ********************
-
-        # TODO We need to split pickups_aggregated into train, dev, and test sets.
-        def zoneIdToLat(zone_id):
-            return (int(zone_id) / 200 + 40 * 100) / 100.0
-
-        def zoneIdToLong(zone_id):
-            return (int(zone_id) % 200 - 75 * 100) / 100.0
-
-        test_data = [(datetime.datetime(2013, 1, 27, 16, 11, 12, 30), zoneIdToLat(13326), zoneIdToLong(13326)),
-                     (datetime.datetime(2013, 1, 1, 2, 11, 12, 30), zoneIdToLat(12922), zoneIdToLong(12922)),
-                     (datetime.datetime(2013, 1, 15, 2, 11, 12, 30), zoneIdToLat(20), zoneIdToLong(20))]
-        true_num_pickups = [6, 16, 0]
-
-        return test_data, true_num_pickups
