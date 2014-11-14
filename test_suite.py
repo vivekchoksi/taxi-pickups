@@ -55,7 +55,7 @@ class TestBaseline(unittest.TestCase):
 
     def setUp(self):
         self.db = Database()
-        self.model = Baseline(self.db)
+        self.model = Baseline(self.db, dataset=None)
         self.table_name = Const.AGGREGATED_PICKUPS
 
     def test_basic_prediction(self):
