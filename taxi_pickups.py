@@ -174,8 +174,11 @@ class Evaluator(object):
 
 
 def getModel(model_name, database, dataset):
-    if model_name == 'baseline':
+    lower_name = model_name.lower()
+    if lower_name == 'baseline':
         return Baseline(database, dataset)
+    elif lower_name == 'betterbaseline':
+        return BetterBaseline(database, dataset)
     raise Exception("No model with name %s" % model_name)
 
 def main(args):
@@ -184,7 +187,7 @@ def main(args):
         exit(1)
 
     database = Database()
-    dataset = Dataset(0.9, 10000, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.9, 100, database, Const.AGGREGATED_PICKUPS)
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)
