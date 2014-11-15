@@ -112,8 +112,7 @@ class Dataset(object):
         :return: examples (i.e. rows) from the data table represented as a dicts
             that map column names to column values
         '''
-        query_string = ("SELECT * FROM %s WHERE id > %d AND num_pickups > 1 "
-                        "limit %d") \
+        query_string = ("SELECT * FROM %s WHERE id > %d limit %d") \
                         % (self.table_name, self.last_fetched_id, num_examples)
 
         results = self.db.execute_query(query_string)
@@ -122,8 +121,7 @@ class Dataset(object):
 
     def _getLastTrainID(self):
         query_string = ("SELECT MAX(id) as max_id FROM "
-                        "(SELECT id FROM %s WHERE "
-                        "num_pickups > 1 LIMIT %d) T") \
+                        "(SELECT id FROM %s LIMIT %d) T") \
                         % (self.table_name, self.trainingExamplesLeft)
 
         return self.db.execute_query(query_string, fetch_all=False)[0]['max_id']
@@ -187,7 +185,7 @@ def main(args):
         exit(1)
 
     database = Database()
-    dataset = Dataset(0.9, 100, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.7, 100, database, Const.AGGREGATED_PICKUPS)
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)
