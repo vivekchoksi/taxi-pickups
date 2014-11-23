@@ -1,7 +1,29 @@
 #!/usr/bin/python
 
 from taxi_pickups import *
-import unittest
+import feature_extractor
+import unittest, datetime
+
+class TestFeatureExtractor(unittest.TestCase):
+
+    def setUp(self):
+        self.db = Database()
+
+    def test_time_1(self):
+        self._test_time_features('2014-11-22 10:00:00', 10, 5, 22)
+
+    def _test_time_features(self, datetime_str, hourOfDay, dayOfWeek, dayOfMonth):
+        x = {
+            'start_datetime': datetime.datetime.strptime(
+                datetime_str, '%Y-%m-%d %H:%M:%S')
+        }
+        feature_dict = {}
+        feature_extractor._extractHourOfDay(x, feature_dict)
+        feature_extractor._extractDayOfWeek(x, feature_dict)
+        feature_extractor._extractDayOfMonth(x, feature_dict)
+        self.assertEquals(feature_dict['HourOfDay'], hourOfDay)
+        self.assertEquals(feature_dict['DayOfWeek'], dayOfWeek)
+        self.assertEquals(feature_dict['DayOfMonth'], dayOfMonth)
 
 class TestDataset(unittest.TestCase):
 
@@ -58,7 +80,8 @@ class TestBaseline(unittest.TestCase):
 
     def setUp(self):
         self.db = Database()
-        self.model = Baseline(self.db, dataset=None)
+        self.model = Baseline(self.db, dataset=Dataset(
+            1.0, 73727, self.db, Const.AGGREGATED_PICKUPS))
         self.table_name = Const.AGGREGATED_PICKUPS
 
     def test_basic_prediction(self):
@@ -66,7 +89,7 @@ class TestBaseline(unittest.TestCase):
                         % (self.table_name, 73727)
 
         test_example = self.db.execute_query(query_string)[0]
-        self.assertAlmostEqual(self.model.predict(test_example), 1961.3333)
+        self.assertAlmostEqual(self.model.predict(test_example), 1171.9475)
 
 if __name__ == '__main__':
     unittest.main()

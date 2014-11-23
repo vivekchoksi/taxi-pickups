@@ -4,6 +4,7 @@ import datetime
 import os
 from abc import ABCMeta, abstractmethod
 from const import Const
+from feature_extractor import getFeatureVectors
 
 # Interface for our learning models.
 class Model(object):
@@ -27,6 +28,31 @@ class Model(object):
         :return: Predicted number of pickups for the test example.
         '''
         pass
+
+class LinearRegression(Model):
+
+    def __init__(self, database, dataset):
+        self.db = database
+        self.dataset = dataset
+        self.table_name = Const.AGGREGATED_PICKUPS
+
+    def train(self):
+        '''
+        See Model for comments on the parameters and return value.
+        '''
+        row_dicts = []
+        while self.dataset.hasMoreTrainExamples():
+            row_dicts.extend(self.dataset.getTrainExamples(20))
+        X = getFeatureVectors(row_dicts)
+        print X
+
+    def predict(self, test_example):
+        '''
+        Predicts the number of pickups at the specified time and location,
+        within a 1 hour interval and 0.01 x 0.01 degrees lat/long box.
+
+        See Model for comments on the parameters and return value.
+        '''
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.
