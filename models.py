@@ -2,6 +2,8 @@
 import MySQLdb
 import datetime
 import os
+import numpy as np
+from sklearn import linear_model, preprocessing
 from abc import ABCMeta, abstractmethod
 from const import Const
 from feature_extractor import getFeatureVectors
@@ -35,21 +37,33 @@ class LinearRegression(Model):
         self.db = database
         self.dataset = dataset
         self.table_name = Const.AGGREGATED_PICKUPS
+        self.scaler = preprocessing.StandardScaler(with_mean=False)
+        self.regressor = linear_model.SGDRegressor(
+            learning_rate='constant', eta0=0.0001,
+            verbose=1
+        )
 
     def train(self):
         '''
         See Model for comments on the parameters and return value.
         '''
-
-        # Populate `row_dicts`, a list of dicts that represent training
-        # examples.
-        row_dicts = []
         while self.dataset.hasMoreTrainExamples():
-            row_dicts.extend(self.dataset.getTrainExamples(20))
+            # Get a batch of training examples, represented as a list of dicts.
+            row_dicts = []
+            row_dicts.extend(self.dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
 
-        # Transform the training data into vector form.
-        X = getFeatureVectors(row_dicts)
-        # print X
+            # Transform the training data into "vectorized" form.
+            X = getFeatureVectors(row_dicts)
+
+            # Get the labels of the training examples.
+            y = np.array([ex['num_pickups'] for ex in row_dicts])
+
+            # TODO: How can we get scaling to work with partial_fit?
+            self.scaler.fit_transform(X, y)
+
+            # FIXME: Partial fit: the model isn't converging, and it either
+            # crashes due to overflow or gives way-off predictions.
+            self.regressor.partial_fit(X, y)
 
     def predict(self, test_example):
         '''
@@ -58,6 +72,9 @@ class LinearRegression(Model):
 
         See Model for comments on the parameters and return value.
         '''
+        vectorized_example = getFeatureVectors([test_example])
+        y = self.regressor.predict(vectorized_example)[0]
+        return y
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.

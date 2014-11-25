@@ -8,6 +8,8 @@ CONFIG.read('features.cfg')
 FEATURE_SELECTION = 'FeatureSelection'
 VECTORIZER = DictVectorizer(sparse=True)
 
+# TODO: We want these features to be multi-class, not linear.
+
 def _extractZone(x, feature_dict):
     feature_dict['Zone'] = x['zone_id']
 
