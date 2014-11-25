@@ -22,11 +22,11 @@ def _extractDayOfMonth(x, feature_dict):
 
 def _getFeatureDict(x):
     """
+    Transform a training or testing example into a feature vector.
     Note that x is modified to include additional key-value pairs.
 
-    :param x: dict mapping column name to column value for a particular row.
-
-    :return: phi(x) - a dict mapping feature names to feature values.
+    :param x: a dict representing one row in a data table.
+    :return: phi(x), a dict mapping feature names to feature values.
     """
     feature_dict = {}
     if CONFIG.getboolean(FEATURE_SELECTION, 'Zone'):
@@ -41,13 +41,12 @@ def _getFeatureDict(x):
 
 def getFeatureVectors(X):
     """
-    Learn a list of feature name -> indices mappings in order to vectorize the
-    dict feature vector into a numpy array or scipy sparse matrix and return the
-    array or sparse matrix ready to be used by an sklearn ML model.
+    Transform the input list of training examples from a list of dicts to a
+    numpy array or scipy sparse matrix for input into an sklearn ML model.
 
-    :param X: list of dicts where each dict maps column names to column values. 
-        X is basically the entire training data.
+    :param X: a list of training examples, represented as a list of dicts where
+              each dict maps column names to column values.
 
-    :return the scipy sparse matrix representing the training data.
+    :return: the scipy sparse matrix that represents the training data.
     """
     return VECTORIZER.fit_transform([_getFeatureDict(x) for x in X])

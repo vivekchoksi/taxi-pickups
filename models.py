@@ -40,11 +40,16 @@ class LinearRegression(Model):
         '''
         See Model for comments on the parameters and return value.
         '''
+
+        # Populate `row_dicts`, a list of dicts that represent training
+        # examples.
         row_dicts = []
         while self.dataset.hasMoreTrainExamples():
             row_dicts.extend(self.dataset.getTrainExamples(20))
+
+        # Transform the training data into vector form.
         X = getFeatureVectors(row_dicts)
-        print X
+        # print X
 
     def predict(self, test_example):
         '''

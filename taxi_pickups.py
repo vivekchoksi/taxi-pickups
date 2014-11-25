@@ -177,6 +177,8 @@ def getModel(model_name, database, dataset):
         return Baseline(database, dataset)
     elif lower_name == 'betterbaseline':
         return BetterBaseline(database, dataset)
+    elif lower_name == 'linear':
+        return LinearRegression(database, dataset)
     raise Exception("No model with name %s" % model_name)
 
 def main(args):
