@@ -58,9 +58,9 @@ class RegressionModel(Model):
         # Get the labels of the training examples.
         y = np.array([ex['num_pickups'] for ex in row_dicts])
 
-        print 'Memory Footprint in bytes:'
-        print 'Feature dicts: ', sys.getsizeof(row_dicts)
-        print 'X: ', X.data.nbytes
+        util.verbosePrint('Memory Footprint in bytes:')
+        util.verbosePrint('Feature dicts: ', sys.getsizeof(row_dicts))
+        util.verbosePrint('X: ', X.data.nbytes)
 
         # NOTE: For now, we are using fit because the data set we are using is
         # small enough to permit this.
@@ -82,7 +82,7 @@ class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
         sgd_regressor = linear_model.SGDRegressor(
             n_iter=15,
-            verbose=1
+            verbose=1 if util.VERBOSE else 0
         )
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
 

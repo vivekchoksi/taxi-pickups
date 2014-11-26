@@ -1,6 +1,14 @@
 import operator
 from feature_extractor import getFeatureNameIndices
 
+VERBOSE = False
+
+def verbosePrint(*args):
+    if VERBOSE:
+        for arg in args:
+           print arg,
+        print
+
 def printMostPredictiveFeatures(sklearn_model, n):
     '''
     Prints the n features whose coefficients are the highest, and the n features
