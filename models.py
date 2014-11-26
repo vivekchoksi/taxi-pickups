@@ -39,7 +39,7 @@ class LinearRegression(Model):
         self.table_name = Const.AGGREGATED_PICKUPS
         self.scaler = preprocessing.StandardScaler(with_mean=False)
         self.regressor = linear_model.SGDRegressor(
-            learning_rate='constant', eta0=0.0001,
+            n_iter=15,
             verbose=1
         )
 
@@ -63,7 +63,10 @@ class LinearRegression(Model):
         print 'X: ', X.data.nbytes
 
         # TODO: How can we get scaling to work with partial_fit?
-        self.scaler.fit_transform(X, y)
+        # self.scaler.fit_transform(X, y)
+
+        # NOTE: For now, we are using fit because the data set we are using is
+        # small enough to permit this.
 
         # self.regressor.partial_fit(X, y)
         self.regressor.fit(X, y)

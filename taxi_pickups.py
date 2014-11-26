@@ -193,7 +193,8 @@ def main(args):
         exit(1)
 
     database = Database()
-    dataset = Dataset(0.7, 143649, database, Const.AGGREGATED_PICKUPS)
+    # dataset = Dataset(0.7, Const.DATASET_SIZE, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.7, 40000, database, Const.AGGREGATED_PICKUPS)
     print dataset
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
