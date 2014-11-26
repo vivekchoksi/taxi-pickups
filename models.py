@@ -65,7 +65,8 @@ class LinearRegression(Model):
         # TODO: How can we get scaling to work with partial_fit?
         self.scaler.fit_transform(X, y)
 
-        self.regressor.partial_fit(X, y)
+        # self.regressor.partial_fit(X, y)
+        self.regressor.fit(X, y)
 
     def predict(self, test_example):
         '''
