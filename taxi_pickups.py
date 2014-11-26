@@ -185,6 +185,8 @@ def getModel(model_name, database, dataset):
         return BetterBaseline(database, dataset)
     elif lower_name == 'linear':
         return LinearRegression(database, dataset)
+    elif lower_name == 'svr':
+        return SupportVectorRegression(database, dataset)
     raise Exception("No model with name %s" % model_name)
 
 def main(args):
@@ -196,6 +198,7 @@ def main(args):
     # dataset = Dataset(0.7, Const.DATASET_SIZE, database, Const.AGGREGATED_PICKUPS)
     dataset = Dataset(0.7, 40000, database, Const.AGGREGATED_PICKUPS)
     print dataset
+
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)

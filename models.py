@@ -4,7 +4,7 @@ import datetime
 import sys
 import util
 import numpy as np
-from sklearn import linear_model, preprocessing
+from sklearn import linear_model, preprocessing, svm
 from abc import ABCMeta, abstractmethod
 from const import Const
 from feature_extractor import getFeatureVectors
@@ -32,17 +32,16 @@ class Model(object):
         '''
         pass
 
-class LinearRegression(Model):
+# This class can perform training and testing on the input regressor
+# model.
+class RegressionModel(Model):
+    __metaclass__ = ABCMeta
 
-    def __init__(self, database, dataset):
+    def __init__(self, database, dataset, regressor_model):
         self.db = database
         self.dataset = dataset
         self.table_name = Const.AGGREGATED_PICKUPS
-        self.scaler = preprocessing.StandardScaler(with_mean=False)
-        self.regressor = linear_model.SGDRegressor(
-            n_iter=15,
-            verbose=1
-        )
+        self.regressor = regressor_model
 
     def train(self):
         '''
@@ -63,15 +62,10 @@ class LinearRegression(Model):
         print 'Feature dicts: ', sys.getsizeof(row_dicts)
         print 'X: ', X.data.nbytes
 
-        # TODO: How can we get scaling to work with partial_fit?
-        # self.scaler.fit_transform(X, y)
-
         # NOTE: For now, we are using fit because the data set we are using is
         # small enough to permit this.
-
-        # self.regressor.partial_fit(X, y)
         self.regressor.fit(X, y)
-        util.printMostPredictiveFeatures(self.regressor, 15)
+        # util.printMostPredictiveFeatures(self.regressor, 15)
 
     def predict(self, test_example):
         '''
@@ -83,6 +77,20 @@ class LinearRegression(Model):
         vectorized_example = getFeatureVectors([test_example], is_test=True)
         y = self.regressor.predict(vectorized_example)[0]
         return y
+
+class LinearRegression(RegressionModel):
+    def __init__(self, database, dataset):
+        sgd_regressor = linear_model.SGDRegressor(
+            n_iter=15,
+            verbose=1
+        )
+        RegressionModel.__init__(self, database, dataset, sgd_regressor)
+
+
+class SupportVectorRegression(RegressionModel):
+    def __init__(self, database, dataset):
+        svr_regressor = svm.SVR()
+        RegressionModel.__init__(self, database, dataset, svr_regressor)
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.
