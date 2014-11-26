@@ -2,13 +2,13 @@ import operator
 from feature_extractor import getFeatureNameIndices
 
 def printMostPredictiveFeatures(sklearn_model, n):
-    '''
+    """
     Prints the n features whose coefficients are the highest, and the n features
     whose coefficients are the lowest.
 
     :param linear_model: any sklearn_model that has the attributes coef_
     :param n: number of the best/worst features to print (prints 2n features total)
-    '''
+    """
     feature_weights = []
     for feature_name, index in getFeatureNameIndices().iteritems():
         feature_weights.append((feature_name, sklearn_model.coef_[index]))
