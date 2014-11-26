@@ -22,6 +22,9 @@ def _extractDayOfWeek(x, feature_dict):
 def _extractDayOfMonth(x, feature_dict):
     feature_dict['DayOfMonth'] = str(x['start_datetime'].day)
 
+def _extractZoneHourOfDay(x, feature_dict):
+    feature_dict['ZoneHourOfDay'] = str(x['zone_id']) + "_" + str(x['start_datetime'].hour)
+
 def _getFeatureDict(x):
     """
     Transform a training or testing example into a feature vector.
@@ -38,6 +41,8 @@ def _getFeatureDict(x):
         _extractDayOfWeek(x, feature_dict)
     if CONFIG.getboolean(FEATURE_SELECTION, 'DayOfMonth'):
         _extractDayOfMonth(x, feature_dict)
+    if CONFIG.getboolean(FEATURE_SELECTION, 'ZoneHourOfDay'):
+        _extractZoneHourOfDay(x, feature_dict)
     return feature_dict
 
 def getFeatureVectors(X, is_test=False):
@@ -57,10 +62,10 @@ def getFeatureVectors(X, is_test=False):
         return VECTORIZER.transform(feature_dicts)
 
 def getFeatureNameIndices():
-    '''
+    """
     Use this to know which indices in the sklearn vectors correspond
     to which features.
 
     :return: dict that maps feature names to indices.
-    '''
+    """
     return VECTORIZER.vocabulary_
