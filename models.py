@@ -1,14 +1,13 @@
 #!/usr/bin/python
 import MySQLdb
 import datetime
-import operator
-import os, sys
+import sys
+import util
 import numpy as np
 from sklearn import linear_model, preprocessing
 from abc import ABCMeta, abstractmethod
 from const import Const
-from feature_extractor import getFeatureVectors, getFeatureNameIndices
-import util
+from feature_extractor import getFeatureVectors
 
 # Interface for our learning models.
 class Model(object):
@@ -69,26 +68,7 @@ class LinearRegression(Model):
 
         # self.regressor.partial_fit(X, y)
         self.regressor.fit(X, y)
-        self.printMostPredictiveFeatures(15)
-
-    def printMostPredictiveFeatures(self, n):
-        '''
-        Prints the n features whose coefficients are the highest, and the n features
-        whose coefficients are the lowest.
-
-        :param n: number of the best/worst features to print (prints 2n features total)
-        '''
-        feature_weights = []
-        for feature_name, index in getFeatureNameIndices().iteritems():
-            feature_weights.append((feature_name, self.regressor.coef_[index]))
-        feature_weights.sort(key=operator.itemgetter(1))
-
-        def printFeatureWeight(feature_weight):
-            print '%s:\t%f' % (feature_weight[0], feature_weight[1])
-
-        print ('Feature\t\tWeight')
-        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
-        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
+        util.printMostPredictiveFeatures(self.regressor, 15)
 
     def predict(self, test_example):
         '''
