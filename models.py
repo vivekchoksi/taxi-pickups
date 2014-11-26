@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import MySQLdb
 import datetime
-import os
+import os, sys
 import numpy as np
 from sklearn import linear_model, preprocessing
 from abc import ABCMeta, abstractmethod
@@ -47,23 +47,25 @@ class LinearRegression(Model):
         '''
         See Model for comments on the parameters and return value.
         '''
+        row_dicts = []
         while self.dataset.hasMoreTrainExamples():
             # Get a batch of training examples, represented as a list of dicts.
-            row_dicts = []
             row_dicts.extend(self.dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
 
-            # Transform the training data into "vectorized" form.
-            X = getFeatureVectors(row_dicts)
+        # Transform the training data into "vectorized" form.
+        X = getFeatureVectors(row_dicts)
 
-            # Get the labels of the training examples.
-            y = np.array([ex['num_pickups'] for ex in row_dicts])
+        # Get the labels of the training examples.
+        y = np.array([ex['num_pickups'] for ex in row_dicts])
 
-            # TODO: How can we get scaling to work with partial_fit?
-            self.scaler.fit_transform(X, y)
+        print 'Memory Footprint in bytes:'
+        print 'Feature dicts: ', sys.getsizeof(row_dicts)
+        print 'X: ', X.data.nbytes
 
-            # FIXME: Partial fit: the model isn't converging, and it either
-            # crashes due to overflow or gives way-off predictions.
-            self.regressor.partial_fit(X, y)
+        # TODO: How can we get scaling to work with partial_fit?
+        self.scaler.fit_transform(X, y)
+
+        self.regressor.partial_fit(X, y)
 
     def predict(self, test_example):
         '''
@@ -72,7 +74,7 @@ class LinearRegression(Model):
 
         See Model for comments on the parameters and return value.
         '''
-        vectorized_example = getFeatureVectors([test_example])
+        vectorized_example = getFeatureVectors([test_example], is_test=True)
         y = self.regressor.predict(vectorized_example)[0]
         return y
 

@@ -126,6 +126,12 @@ class Dataset(object):
 
         return self.db.execute_query(query_string, fetch_all=False)[0]['max_id']
 
+    def __str__(self):
+        info = 'Num Training Examples: %d, Num Testing Examples: %d' % \
+            (self.trainingExamplesLeft, self.testingExamplesLeft)
+        info += ('\nFrom table: %s' % self.table_name)
+        return info
+
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
 
@@ -187,7 +193,8 @@ def main(args):
         exit(1)
 
     database = Database()
-    dataset = Dataset(0.7, 100, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.7, 143649, database, Const.AGGREGATED_PICKUPS)
+    print dataset
     # Instantiate the specified learning model.
     model = getModel(args[1], database, dataset)
     evaluator = Evaluator(model, dataset)
