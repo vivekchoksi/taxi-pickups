@@ -1,7 +1,8 @@
 #!/usr/bin/python
 import MySQLdb
 import datetime
-import os, sys
+import sys
+import util
 import numpy as np
 from sklearn import linear_model, preprocessing
 from abc import ABCMeta, abstractmethod
@@ -70,6 +71,7 @@ class LinearRegression(Model):
 
         # self.regressor.partial_fit(X, y)
         self.regressor.fit(X, y)
+        util.printMostPredictiveFeatures(self.regressor, 15)
 
     def predict(self, test_example):
         '''

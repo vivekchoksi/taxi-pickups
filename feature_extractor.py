@@ -55,3 +55,12 @@ def getFeatureVectors(X, is_test=False):
         return VECTORIZER.fit_transform(feature_dicts)
     else:
         return VECTORIZER.transform(feature_dicts)
+
+def getFeatureNameIndices():
+    '''
+    Use this to know which indices in the sklearn vectors correspond
+    to which features.
+
+    :return: dict that maps feature names to indices.
+    '''
+    return VECTORIZER.vocabulary_
