@@ -2,11 +2,14 @@
 
 import ConfigParser, datetime
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.cluster import MiniBatchKMeans
 
 CONFIG = ConfigParser.RawConfigParser()
 CONFIG.read('features.cfg')
 FEATURE_SELECTION = 'FeatureSelection'
 VECTORIZER = DictVectorizer(sparse=True)
+PRECLUSTER_VECTORIZER = DictVectorizer(sparse=True)
+CLUSTERER = MiniBatchKMeans(n_clusters=15, init='k-means++')
 
 # TODO: We want these features to be multi-class, not linear.
 
@@ -24,6 +27,28 @@ def _extractDayOfMonth(x, feature_dict):
 
 def _extractZoneHourOfDay(x, feature_dict):
     feature_dict['ZoneHourOfDay'] = str(x['zone_id']) + "_" + str(x['start_datetime'].hour)
+
+def _extractCluster(x, feature_dict):
+    feature_dict['Cluster'] = str(x['cluster_id'])
+
+def _appendClusterFeatures(feature_dicts, is_test):
+    """
+    If training, first runs k-means to compute the optimal centroids.
+    For each example in feature_dicts, appends the index of the nearest centroid
+    as a feature.
+
+    :param feature_dict: feature dictionary computed using _getFeatureDict().
+    :param is_test: whether extracting features for testing or training purposes.
+    """
+    X_vectors = None
+    if not is_test:
+        X_vectors = PRECLUSTER_VECTORIZER.fit_transform(feature_dicts)
+        CLUSTERER.fit(X_vectors)
+    else:
+        X_vectors = PRECLUSTER_VECTORIZER.transform(feature_dicts)
+
+    Z = CLUSTERER.predict(X_vectors)
+    [_extractCluster({'cluster_id': Z[i]}, feature_dicts[i]) for i in xrange(len(Z))]
 
 def _getFeatureDict(x):
     """
@@ -56,6 +81,12 @@ def getFeatureVectors(X, is_test=False):
     :return: the scipy sparse matrix that represents the training data.
     """
     feature_dicts = [_getFeatureDict(x) for x in X]
+
+    # If clustering is turned on, compute the centroids, then
+    # append the nearest centroid ID to each feature vector.
+    if CONFIG.getboolean(FEATURE_SELECTION, 'Cluster'):
+        _appendClusterFeatures(feature_dicts, is_test)
+
     if not is_test:
         return VECTORIZER.fit_transform(feature_dicts)
     else:
