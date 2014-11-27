@@ -5,6 +5,7 @@ import MySQLdb
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 from models import *
+from optparse import OptionParser
 
 class Database(object):
 
@@ -185,19 +186,45 @@ def getModel(model_name, database, dataset):
         return BetterBaseline(database, dataset)
     elif lower_name == 'linear':
         return LinearRegression(database, dataset)
+    elif lower_name == 'svr':
+        return SupportVectorRegression(database, dataset)
     raise Exception("No model with name %s" % model_name)
 
-def main(args):
-    if len(args) < 2:
-        print 'Usage: taxi_pickups.py model'
+def getOptions():
+    '''
+    Get command-line options and handle errors.
+    :return: command-line options and arguments
+    '''
+    parser = OptionParser()
+    parser.add_option("-m", "--model", dest="model",
+                      help="write report to MODEL", metavar="MODEL")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="print verbose output")
+    parser.add_option("-n", "--numexamples", type='int', dest="num_examples",
+                      default=Const.DATASET_SIZE, help="use a dataset of size NUM",
+                      metavar="NUM")
+    options, args = parser.parse_args()
+
+    if not options.model:
+        print "Usage: \tpython taxi_pickups.py -m <model-name>"
+        print "\nTo see more options, run python taxi_pickups.py --help"
         exit(1)
 
+    if options.verbose:
+        util.VERBOSE = True
+
+    return options, args
+
+def main(args):
+    options, args = getOptions()
+
     database = Database()
-    # dataset = Dataset(0.7, Const.DATASET_SIZE, database, Const.AGGREGATED_PICKUPS)
-    dataset = Dataset(0.7, 40000, database, Const.AGGREGATED_PICKUPS)
-    print dataset
+    dataset = Dataset(0.7, options.num_examples, database, Const.AGGREGATED_PICKUPS)
+    util.verbosePrint(dataset)
+
     # Instantiate the specified learning model.
-    model = getModel(args[1], database, dataset)
+    model = getModel(options.model, database, dataset)
     evaluator = Evaluator(model, dataset)
 
     # Train the model.
