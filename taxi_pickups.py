@@ -11,7 +11,7 @@ class Database(object):
 
     def __init__(self):
         self.db = MySQLdb.connect(
-            host="localhost", user="root", passwd="",  db=Const.DATABASE_NAME)
+            host='localhost', user='root', passwd='', db=Const.DATABASE_NAME)
 
     def execute_query(self, query_string, fetch_all=True):
         '''
@@ -84,7 +84,7 @@ class Dataset(object):
             fewer than batch_size in case there are no more training examples.
         '''
         if not self.hasMoreTrainExamples():
-            raise Exception("No more training examples left.")
+            raise Exception('No more training examples left.')
         if batch_size > self.trainingExamplesLeft:
             batch_size = self.trainingExamplesLeft
 
@@ -97,7 +97,7 @@ class Dataset(object):
         :return: test example, represented as a dict.
         '''
         if not self.hasMoreTestExamples():
-            raise Exception("No more test examples left.")
+            raise Exception('No more test examples left.')
 
         if self.last_fetched_id < self.last_train_id:
             self.switchToTestMode()
@@ -113,7 +113,7 @@ class Dataset(object):
         :return: examples (i.e. rows) from the data table represented as a dicts
             that map column names to column values
         '''
-        query_string = ("SELECT * FROM %s WHERE id > %d limit %d") \
+        query_string = ('SELECT * FROM %s WHERE id > %d limit %d') \
                         % (self.table_name, self.last_fetched_id, num_examples)
 
         results = self.db.execute_query(query_string)
@@ -121,8 +121,8 @@ class Dataset(object):
         return results
 
     def _getLastTrainID(self):
-        query_string = ("SELECT MAX(id) as max_id FROM "
-                        "(SELECT id FROM %s LIMIT %d) T") \
+        query_string = ('SELECT MAX(id) as max_id FROM '
+                        '(SELECT id FROM %s LIMIT %d) T') \
                         % (self.table_name, self.trainingExamplesLeft)
 
         return self.db.execute_query(query_string, fetch_all=False)[0]['max_id']
@@ -188,7 +188,7 @@ def getModel(model_name, database, dataset):
         return LinearRegression(database, dataset)
     elif lower_name == 'svr':
         return SupportVectorRegression(database, dataset)
-    raise Exception("No model with name %s" % model_name)
+    raise Exception('No model with name %s' % model_name)
 
 def getOptions():
     '''
@@ -196,19 +196,19 @@ def getOptions():
     :return: command-line options and arguments
     '''
     parser = OptionParser()
-    parser.add_option("-m", "--model", dest="model",
-                      help="write report to MODEL", metavar="MODEL")
-    parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", default=False,
-                      help="print verbose output")
-    parser.add_option("-n", "--numexamples", type='int', dest="num_examples",
-                      default=Const.DATASET_SIZE, help="use a dataset of size NUM",
-                      metavar="NUM")
+    parser.add_option('-m', '--model', dest='model',
+                      help='write report to MODEL', metavar='MODEL')
+    parser.add_option('-v', '--verbose',
+                      action='store_true', dest='verbose', default=False,
+                      help='print verbose output')
+    parser.add_option('-n', '--numexamples', type='int', dest='num_examples',
+                      default=Const.DATASET_SIZE, help='use a dataset of size NUM',
+                      metavar='NUM')
     options, args = parser.parse_args()
 
     if not options.model:
-        print "Usage: \tpython taxi_pickups.py -m <model-name>"
-        print "\nTo see more options, run python taxi_pickups.py --help"
+        print 'Usage: \tpython taxi_pickups.py -m <model-name>'
+        print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
 
     if options.verbose:

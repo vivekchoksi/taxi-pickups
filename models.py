@@ -33,7 +33,7 @@ class Model(object):
         pass
 
 # This class can perform training and testing on the input regressor
-# model.
+# model. Specific model classes can subclass from `RegressionModel`.
 class RegressionModel(Model):
     __metaclass__ = ABCMeta
 
@@ -46,26 +46,27 @@ class RegressionModel(Model):
     def train(self):
         '''
         See Model for comments on the parameters and return value.
+        We are using `fit()` rather than `partial_fit()` since the January
+        data is small enough to permit fitting all data into RAM.
         '''
+        util.verbosePrint('Training', self, '...')
+
+        # Populate `row_dicts` with all training examples, represented as a
+        # list of dicts.
         row_dicts = []
         while self.dataset.hasMoreTrainExamples():
-            # Get a batch of training examples, represented as a list of dicts.
             row_dicts.extend(self.dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
 
         # Transform the training data into "vectorized" form.
         X = getFeatureVectors(row_dicts)
-
         # Get the labels of the training examples.
-        y = np.array([ex['num_pickups'] for ex in row_dicts])
+        y = np.array([train_example['num_pickups'] for train_example in row_dicts])
 
-        util.verbosePrint('Memory Footprint in bytes:')
-        util.verbosePrint('Feature dicts: ', sys.getsizeof(row_dicts))
-        util.verbosePrint('X: ', X.data.nbytes)
-
-        # NOTE: For now, we are using fit because the data set we are using is
-        # small enough to permit this.
         self.regressor.fit(X, y)
-        # util.printMostPredictiveFeatures(self.regressor, 15)
+
+        if util.VERBOSE:
+            self._printMemoryStats(row_dicts, X)
+            util.printMostPredictiveFeatures(self.regressor, 15)
 
     def predict(self, test_example):
         '''
@@ -78,6 +79,15 @@ class RegressionModel(Model):
         y = self.regressor.predict(vectorized_example)[0]
         return y
 
+    def _printMemoryStats(self, row_dicts, X):
+        print '\n---- Memory usage stats ----'
+        print 'Training feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
+        print 'Vectorized training data: \t', X.data.nbytes, " bytes used\n"
+
+    @abstractmethod
+    def __str__(self):
+        pass
+
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
         sgd_regressor = linear_model.SGDRegressor(
@@ -86,11 +96,17 @@ class LinearRegression(RegressionModel):
         )
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
 
+    def __str__(self):
+        return 'linear regression model [linear]'
+
 
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
         svr_regressor = svm.SVR()
         RegressionModel.__init__(self, database, dataset, svr_regressor)
+
+    def __str__(self):
+        return 'support vector regression model [svr]'
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.
@@ -122,13 +138,15 @@ class BetterBaseline(Model):
         num_pickups = 0.0
         pickup_time = test_example['start_datetime']
         example_id, zone_id = test_example['id'], test_example['zone_id']
-        query_string = ("SELECT AVG(num_pickups) as avg_num_pickups FROM %s "
-                        "WHERE HOUR(start_datetime) = %d AND zone_id = %d AND "
-                        # Hacky way to limit ourself to looking at training data.
-                        "id <= %d") % \
+        query_string = ('SELECT AVG(num_pickups) as avg_num_pickups FROM %s '
+                        'WHERE HOUR(start_datetime) = %d AND zone_id = %d AND '
+                        # Hacky way to limit ourself to looking at training
+                        # data. This assumes that training data is ordered
+                        # by increasing id.
+                        'id <= %d') % \
                         (self.table_name, pickup_time.hour, zone_id, 
                         self.dataset.last_train_id)
-        # print "Querying 'trip_data': " + query_string
+        util.verbosePrint('Querying `trip_data`: ' + query_string)
         results = self.db.execute_query(query_string, fetch_all=False)
         if len(results) == 1:
             num_pickups = float(results[0]['avg_num_pickups'])
@@ -165,12 +183,12 @@ class Baseline(Model):
         num_pickups = 0.0
         pickup_time = test_example['start_datetime']
         example_id, zone_id = test_example['id'], test_example['zone_id']
-        query_string = ("SELECT AVG(num_pickups) as avg_num_pickups FROM %s "
-                        "WHERE zone_id = %d AND "
+        query_string = ('SELECT AVG(num_pickups) as avg_num_pickups FROM %s '
+                        'WHERE zone_id = %d AND '
                         # Hacky way to limit ourself to looking at training data.
-                        "id <= %d") % \
+                        'id <= %d') % \
                         (self.table_name, zone_id, self.dataset.last_train_id)
-        # print "Querying 'trip_data': " + query_string
+        util.verbosePrint('Querying `trip_data`: ' + query_string)
         results = self.db.execute_query(query_string, fetch_all=False)
         if len(results) == 1:
             num_pickups = float(results[0]['avg_num_pickups'])

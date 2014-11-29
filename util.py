@@ -11,12 +11,17 @@ def verbosePrint(*args):
 
 def printMostPredictiveFeatures(sklearn_model, n):
     """
-    Prints the n features whose coefficients are the highest, and the n features
-    whose coefficients are the lowest.
+    If the input model has feature coefficients, prints the n features whose
+    coefficients are the highest, and the n features whose coefficients are
+    the lowest.
 
     :param linear_model: any sklearn_model that has the attributes coef_
     :param n: number of the best/worst features to print (prints 2n features total)
     """
+    if not hasattr(sklearn_model, 'coef_'):
+        print 'Cannot print most predictive features for the model.'
+        return
+
     feature_weights = []
     for feature_name, index in getFeatureNameIndices().iteritems():
         feature_weights.append((feature_name, sklearn_model.coef_[index]))

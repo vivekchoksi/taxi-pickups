@@ -11,8 +11,6 @@ VECTORIZER = DictVectorizer(sparse=True)
 PRECLUSTER_VECTORIZER = DictVectorizer(sparse=True)
 CLUSTERER = MiniBatchKMeans(n_clusters=15, init='k-means++')
 
-# TODO: We want these features to be multi-class, not linear.
-
 def _extractZone(x, feature_dict):
     feature_dict['Zone'] = str(x['zone_id'])
 
@@ -26,7 +24,7 @@ def _extractDayOfMonth(x, feature_dict):
     feature_dict['DayOfMonth'] = str(x['start_datetime'].day)
 
 def _extractZoneHourOfDay(x, feature_dict):
-    feature_dict['ZoneHourOfDay'] = str(x['zone_id']) + "_" + str(x['start_datetime'].hour)
+    feature_dict['ZoneHourOfDay'] = str(x['zone_id']) + '_' + str(x['start_datetime'].hour)
 
 def _extractCluster(x, feature_dict):
     feature_dict['Cluster'] = str(x['cluster_id'])
