@@ -82,9 +82,9 @@ class RegressionModel(Model):
         return y
 
     def _printMemoryStats(self, row_dicts, X):
-        print '\n---- Memory usage stats ----'
-        print 'Training feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
-        print 'Vectorized training data: \t', X.data.nbytes, " bytes used\n"
+        print '\n\t---- Memory usage stats ----'
+        print '\tTraining feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
+        print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
 
 
 class LinearRegression(RegressionModel):

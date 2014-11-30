@@ -19,7 +19,7 @@ def printMostPredictiveFeatures(sklearn_model, n):
     :param n: number of the best/worst features to print (prints 2n features total)
     """
     if not hasattr(sklearn_model, 'coef_'):
-        print 'Cannot print out the most predictive features for the model.'
+        print '\tCannot print out the most predictive features for the model.'
         return
 
     feature_weights = []
@@ -28,9 +28,9 @@ def printMostPredictiveFeatures(sklearn_model, n):
     feature_weights.sort(key=operator.itemgetter(1))
 
     def printFeatureWeight(feature_weight):
-        print '%s:\t%f' % (feature_weight[0], feature_weight[1])
+        print '\t%s:\t%f' % (feature_weight[0], feature_weight[1])
 
-    print ('Feature\t\tWeight')
+    print ('\tFeature\t\tWeight')
     [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
     [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
 

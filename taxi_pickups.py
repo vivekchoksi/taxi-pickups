@@ -182,9 +182,9 @@ class Evaluator(object):
         Prints out the true and predicted values for a small set of randomly
         selected training examples.
         '''
-        print '---- Comparison between true and predicted num pickups... ----'
-        print '---- ... for', num_examples, 'randomly selected test examples. ----'
-        print 'True number of pickups \t Predicted number of pickups'
+        print '\n\tComparison between true and predicted num pickups...'
+        print '\t... for', num_examples, 'randomly selected test examples...'
+        print '\tTrue value \t Predicted value'
 
 
         random_indices = random.sample(xrange(len(true_num_pickups)), num_examples) \
@@ -192,7 +192,8 @@ class Evaluator(object):
             else xrange(len(true_num_pickups))
 
         for i in random_indices:
-            print true_num_pickups[i], '\t', predicted_num_pickups[i]
+            print '\t', true_num_pickups[i], '\t', predicted_num_pickups[i]
+        print
 
 
 def getModel(model_name, database, dataset):
@@ -245,11 +246,11 @@ def main(args):
     evaluator = Evaluator(model, dataset)
 
     # Train the model.
-    util.verbosePrint('Training', model, '...')
+    util.verbosePrint('\nTRAINING', model, '...')
     model.train()
 
     # Evaluate the model on data from the test set.
-    util.verbosePrint('Evaluating', model, '...')
+    util.verbosePrint('\nEVALUATING', model, '...')
     evaluator.evaluate()
 
 if __name__ == '__main__':
