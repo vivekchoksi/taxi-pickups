@@ -4,7 +4,7 @@ import datetime
 import sys
 import util
 import numpy as np
-from sklearn import linear_model, preprocessing, svm
+from sklearn import linear_model, preprocessing, svm, tree
 from abc import ABCMeta, abstractmethod
 from const import Const
 from feature_extractor import getFeatureVectors
@@ -41,11 +41,16 @@ class Model(object):
 class RegressionModel(Model):
     __metaclass__ = ABCMeta
 
-    def __init__(self, database, dataset, regressor_model):
+    def __init__(self, database, dataset, regressor_model, sparse=True):
         self.db = database
         self.dataset = dataset
         self.table_name = Const.AGGREGATED_PICKUPS
         self.regressor = regressor_model
+
+        # Whether data should be represented as sparse scipy matrices as
+        # opposed to dense ones. (Some models such as the decision tree
+        # regression model require a dense representation.)
+        self.sparse = sparse
 
     def train(self):
         '''
@@ -60,7 +65,7 @@ class RegressionModel(Model):
             row_dicts.extend(self.dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
 
         # Transform the training data into "vectorized" form.
-        X = getFeatureVectors(row_dicts)
+        X = getFeatureVectors(row_dicts, use_sparse=self.sparse)
         # Get the labels of the training examples.
         y = np.array([train_example['num_pickups'] for train_example in row_dicts])
 
@@ -77,14 +82,15 @@ class RegressionModel(Model):
 
         See Model for comments on the parameters and return value.
         '''
-        vectorized_example = getFeatureVectors([test_example], is_test=True)
+        vectorized_example = getFeatureVectors([test_example], is_test=True, use_sparse=self.sparse)
         y = self.regressor.predict(vectorized_example)[0]
         return y
 
     def _printMemoryStats(self, row_dicts, X):
         print '\n\t---- Memory usage stats ----'
         print '\tTraining feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
-        print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
+        if hasattr(X.data, 'nbytes'):
+            print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
 
 
 class LinearRegression(RegressionModel):
@@ -108,6 +114,14 @@ class SupportVectorRegression(RegressionModel):
 
     def __str__(self):
         return 'svr [support vector regression model]'
+
+class DecisionTreeRegression(RegressionModel):
+    def __init__(self, database, dataset):
+        dt_regressor = tree.DecisionTreeRegressor()
+        RegressionModel.__init__(self, database, dataset, dt_regressor, sparse=False)
+
+    def __str__(self):
+        return 'dtr [decision tree regression model]'
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.

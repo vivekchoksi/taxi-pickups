@@ -206,6 +206,8 @@ def getModel(model_name, database, dataset):
         return LinearRegression(database, dataset)
     elif lower_name == 'svr':
         return SupportVectorRegression(database, dataset)
+    elif lower_name == 'dtr':
+        return DecisionTreeRegression(database, dataset)
     raise Exception('No model with name %s' % model_name)
 
 def getOptions():

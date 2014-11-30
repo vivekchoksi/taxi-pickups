@@ -68,7 +68,7 @@ def _getFeatureDict(x):
         _extractZoneHourOfDay(x, feature_dict)
     return feature_dict
 
-def getFeatureVectors(X, is_test=False):
+def getFeatureVectors(X, use_sparse, is_test=False):
     """
     Transform the input list of training examples from a list of dicts to a
     numpy array or scipy sparse matrix for input into an sklearn ML model.
@@ -76,7 +76,10 @@ def getFeatureVectors(X, is_test=False):
     :param X: a list of training examples, represented as a list of dicts where
               each dict maps column names to column values.
 
-    :return: the scipy sparse matrix that represents the training data.
+    :param use_sparse: boolean for whether the return value should be
+                represented as a sparse matrix.
+
+    :return: the scipy matrix that represents the training data.
     """
     feature_dicts = [_getFeatureDict(x) for x in X]
 
@@ -85,10 +88,11 @@ def getFeatureVectors(X, is_test=False):
     if CONFIG.getboolean(FEATURE_SELECTION, 'Cluster'):
         _appendClusterFeatures(feature_dicts, is_test)
 
-    if not is_test:
-        return VECTORIZER.fit_transform(feature_dicts)
-    else:
-        return VECTORIZER.transform(feature_dicts)
+    transformed = VECTORIZER.transform(feature_dicts) \
+        if is_test \
+        else VECTORIZER.fit_transform(feature_dicts)
+
+    return transformed if use_sparse else transformed.toarray()
 
 def getFeatureNameIndices():
     """
