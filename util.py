@@ -19,7 +19,7 @@ def printMostPredictiveFeatures(sklearn_model, n):
     :param n: number of the best/worst features to print (prints 2n features total)
     """
     if not hasattr(sklearn_model, 'coef_'):
-        print 'Cannot print most predictive features for the model.'
+        print 'Cannot print out the most predictive features for the model.'
         return
 
     feature_weights = []

@@ -32,6 +32,10 @@ class Model(object):
         '''
         pass
 
+    @abstractmethod
+    def __str__(self):
+        pass
+
 # This class can perform training and testing on the input regressor
 # model. Specific model classes can subclass from `RegressionModel`.
 class RegressionModel(Model):
@@ -49,8 +53,6 @@ class RegressionModel(Model):
         We are using `fit()` rather than `partial_fit()` since the January
         data is small enough to permit fitting all data into RAM.
         '''
-        util.verbosePrint('Training', self, '...')
-
         # Populate `row_dicts` with all training examples, represented as a
         # list of dicts.
         row_dicts = []
@@ -84,9 +86,6 @@ class RegressionModel(Model):
         print 'Training feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
         print 'Vectorized training data: \t', X.data.nbytes, " bytes used\n"
 
-    @abstractmethod
-    def __str__(self):
-        pass
 
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
@@ -97,16 +96,18 @@ class LinearRegression(RegressionModel):
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
 
     def __str__(self):
-        return 'linear regression model [linear]'
+        return 'linear [linear regression model]'
 
 
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
-        svr_regressor = svm.SVR()
+        svr_regressor = svm.SVR(
+            verbose=util.VERBOSE
+        )
         RegressionModel.__init__(self, database, dataset, svr_regressor)
 
     def __str__(self):
-        return 'support vector regression model [svr]'
+        return 'svr [support vector regression model]'
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.
@@ -153,6 +154,10 @@ class BetterBaseline(Model):
 
         return num_pickups
 
+
+    def __str__(self):
+        return "baseline v2 [betterbaseline]"
+
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone.
 class Baseline(Model):
@@ -194,3 +199,6 @@ class Baseline(Model):
             num_pickups = float(results[0]['avg_num_pickups'])
 
         return num_pickups
+
+    def __str__(self):
+        return "baseline v1 [baseline]"

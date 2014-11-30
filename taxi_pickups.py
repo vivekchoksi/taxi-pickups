@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import random
 import MySQLdb
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -157,9 +158,9 @@ class Evaluator(object):
             true_num_pickups.append(test_example['num_pickups'])
 
         # Evaluate the predictions.
-        self.evaluatePredictions(true_num_pickups, predicted_num_pickups)
+        self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
 
-    def evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
+    def _evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
         '''
         Prints some metrics on how well the model performed, including the RMSD.
 
@@ -169,13 +170,29 @@ class Evaluator(object):
         '''
         assert(len(true_num_pickups) == len(predicted_num_pickups))
 
-        # Compute the RMSD
+        if util.VERBOSE:
+            self._printRandomTrainingExamples(true_num_pickups, predicted_num_pickups)
+
+        # Compute and print root mean squared error.
         rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
-
-        # print 'True number of pickups:\t\t' + str(true_num_pickups)
-        # print 'Predicted number of pickups:\t' + str(predicted_num_pickups)
-
         print 'RMSD: %f' % rms
+
+    def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
+        '''
+        Prints out the true and predicted values for a small set of randomly
+        selected training examples.
+        '''
+        print '---- Comparison between true and predicted num pickups... ----'
+        print '---- ... for', num_examples, 'randomly selected test examples. ----'
+        print 'True number of pickups \t Predicted number of pickups'
+
+
+        random_indices = random.sample(xrange(len(true_num_pickups)), num_examples) \
+            if len(true_num_pickups) > num_examples \
+            else xrange(len(true_num_pickups))
+
+        for i in random_indices:
+            print true_num_pickups[i], '\t', predicted_num_pickups[i]
 
 
 def getModel(model_name, database, dataset):
@@ -228,9 +245,11 @@ def main(args):
     evaluator = Evaluator(model, dataset)
 
     # Train the model.
+    util.verbosePrint('Training', model, '...')
     model.train()
 
     # Evaluate the model on data from the test set.
+    util.verbosePrint('Evaluating', model, '...')
     evaluator.evaluate()
 
 if __name__ == '__main__':

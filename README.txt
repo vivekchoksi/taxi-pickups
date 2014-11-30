@@ -13,3 +13,10 @@ Python packages setup
 ======================
 sudo pip install -r requirements.txt
 
+
+Running the program
+====================
+Sample usage: python taxi_pickups.py -m baseline
+Run python taxi_pickups.py --help for more options
+
+
