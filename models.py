@@ -119,7 +119,14 @@ class SupportVectorRegression(RegressionModel):
 
 class DecisionTreeRegression(RegressionModel):
     def __init__(self, database, dataset):
-        dt_regressor = tree.DecisionTreeRegressor()
+        # NOTE: The decision tree is very sensitive to max_depth and
+        # min_samples_leaf parameters. These can control the degree
+        # of over / under-fitting. Intuitively, these parameters should
+        # depend on the train set size. TODO: Tune these parameters.
+        dt_regressor = tree.DecisionTreeRegressor(
+            max_depth=50,
+            min_samples_leaf=2
+        )
         RegressionModel.__init__(self, database, dataset, dt_regressor, sparse=False)
 
     def __str__(self):
@@ -163,7 +170,6 @@ class BetterBaseline(Model):
                         'id <= %d') % \
                         (self.table_name, pickup_time.hour, zone_id, 
                         self.dataset.last_train_id)
-        util.verbosePrint('Querying `trip_data`: ' + query_string)
         results = self.db.execute_query(query_string, fetch_all=False)
         if len(results) == 1:
             num_pickups = float(results[0]['avg_num_pickups'])
@@ -172,7 +178,7 @@ class BetterBaseline(Model):
 
 
     def __str__(self):
-        return "baseline v2 [betterbaseline]"
+        return "betterbaseline [baseline version 2]"
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone.
@@ -209,7 +215,6 @@ class Baseline(Model):
                         # Hacky way to limit ourself to looking at training data.
                         'id <= %d') % \
                         (self.table_name, zone_id, self.dataset.last_train_id)
-        util.verbosePrint('Querying `trip_data`: ' + query_string)
         results = self.db.execute_query(query_string, fetch_all=False)
         if len(results) == 1:
             num_pickups = float(results[0]['avg_num_pickups'])
@@ -217,4 +222,4 @@ class Baseline(Model):
         return num_pickups
 
     def __str__(self):
-        return "baseline v1 [baseline]"
+        return "baseline [baseline version 1]"
