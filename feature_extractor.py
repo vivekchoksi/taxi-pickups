@@ -7,7 +7,7 @@ from sklearn.cluster import MiniBatchKMeans
 CONFIG = ConfigParser.RawConfigParser()
 CONFIG.read('features.cfg')
 FEATURE_SELECTION = 'FeatureSelection'
-VECTORIZER = DictVectorizer(sparse=True)
+VECTORIZER = None # Will be set later.
 PRECLUSTER_VECTORIZER = DictVectorizer(sparse=True)
 CLUSTERER = MiniBatchKMeans(n_clusters=15, init='k-means++')
 
@@ -81,6 +81,10 @@ def getFeatureVectors(X, use_sparse, is_test=False):
 
     :return: the scipy matrix that represents the training data.
     """
+    global VECTORIZER
+    if VECTORIZER is None:
+        VECTORIZER = DictVectorizer(sparse=use_sparse)
+
     feature_dicts = [_getFeatureDict(x) for x in X]
 
     # If clustering is turned on, compute the centroids, then
@@ -92,7 +96,7 @@ def getFeatureVectors(X, use_sparse, is_test=False):
         if is_test \
         else VECTORIZER.fit_transform(feature_dicts)
 
-    return transformed if use_sparse else transformed.toarray()
+    return transformed
 
 def getFeatureNameIndices():
     """

@@ -91,6 +91,8 @@ class RegressionModel(Model):
         print '\tTraining feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
         if hasattr(X.data, 'nbytes'):
             print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
+        else:
+            print '\tVectorized training data: \t', sys.getsizeof(X), " bytes used\n"
 
 
 class LinearRegression(RegressionModel):
