@@ -1,13 +1,13 @@
 #!/usr/bin/python
 import MySQLdb
-import datetime
 import sys
+import operator
 import util
 import numpy as np
 from sklearn import linear_model, preprocessing, svm, tree
 from abc import ABCMeta, abstractmethod
 from const import Const
-from feature_extractor import getFeatureVectors
+from feature_extractor import FeatureExtractor
 
 # Interface for our learning models.
 class Model(object):
@@ -47,10 +47,10 @@ class RegressionModel(Model):
         self.table_name = Const.AGGREGATED_PICKUPS
         self.regressor = regressor_model
 
-        # Whether data should be represented as sparse scipy matrices as
-        # opposed to dense ones. (Some models such as the decision tree
+        # sparse determines whether data should be represented as sparse scipy
+        # matrices as opposed to dense ones. (Some models such as the decision tree
         # regression model require a dense representation.)
-        self.sparse = sparse
+        self.feature_extractor = FeatureExtractor(sparse)
 
     def train(self):
         '''
@@ -65,7 +65,7 @@ class RegressionModel(Model):
             row_dicts.extend(self.dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
 
         # Transform the training data into "vectorized" form.
-        X = getFeatureVectors(row_dicts, use_sparse=self.sparse)
+        X = self.feature_extractor.getFeatureVectors(row_dicts)
         # Get the labels of the training examples.
         y = np.array([train_example['num_pickups'] for train_example in row_dicts])
 
@@ -73,7 +73,7 @@ class RegressionModel(Model):
 
         if util.VERBOSE:
             self._printMemoryStats(row_dicts, X)
-            util.printMostPredictiveFeatures(self.regressor, 15)
+            self._printMostPredictiveFeatures(15)
 
     def predict(self, test_example):
         '''
@@ -82,7 +82,7 @@ class RegressionModel(Model):
 
         See Model for comments on the parameters and return value.
         '''
-        vectorized_example = getFeatureVectors([test_example], is_test=True, use_sparse=self.sparse)
+        vectorized_example = self.feature_extractor.getFeatureVectors([test_example], is_test=True)
         y = self.regressor.predict(vectorized_example)[0]
         y = max(0.0, y)
         return y
@@ -94,6 +94,30 @@ class RegressionModel(Model):
             print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
         else:
             print '\tVectorized training data: \t', sys.getsizeof(X), " bytes used\n"
+
+    def _printMostPredictiveFeatures(self, n):
+        """
+        If the input model has feature coefficients, prints the n features whose
+        coefficients are the highest, and the n features whose coefficients are
+        the lowest.
+
+        :param n: number of the best/worst features to print (prints 2n features total)
+        """
+        if not hasattr(self.regressor, 'coef_'):
+            print '\tCannot print out the most predictive features for the model.'
+            return
+
+        feature_weights = []
+        for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
+            feature_weights.append((feature_name, self.regressor.coef_[index]))
+        feature_weights.sort(key=operator.itemgetter(1))
+
+        def printFeatureWeight(feature_weight):
+            print '\t%s:\t%f' % (feature_weight[0], feature_weight[1])
+
+        print ('\tFeature\t\tWeight')
+        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
+        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
 
 
 class LinearRegression(RegressionModel):
