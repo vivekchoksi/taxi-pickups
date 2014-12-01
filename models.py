@@ -102,7 +102,8 @@ class LinearRegression(RegressionModel):
             n_iter=1000, # Takes many iterations to converge.
             alpha=0.0, # Works better without regularization.
             learning_rate='invscaling',
-            eta0=0.1,
+            eta0=0.1, # Converges faster with higher-than-default initial learning rate.
+            power_t=0.1,
             verbose=1 if util.VERBOSE else 0
         )
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
