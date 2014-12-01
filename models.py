@@ -84,6 +84,7 @@ class RegressionModel(Model):
         '''
         vectorized_example = getFeatureVectors([test_example], is_test=True, use_sparse=self.sparse)
         y = self.regressor.predict(vectorized_example)[0]
+        y = max(0.0, y)
         return y
 
     def _printMemoryStats(self, row_dicts, X):
@@ -98,7 +99,8 @@ class RegressionModel(Model):
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
         sgd_regressor = linear_model.SGDRegressor(
-            n_iter=15,
+            n_iter=1000, # Takes many iterations to converge.
+            alpha=0.0, # Works better without regularization.
             verbose=1 if util.VERBOSE else 0
         )
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
