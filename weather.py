@@ -53,6 +53,3 @@ class Weather(object):
          available for this day.
         '''
         return self.weather[datetime.datetime(date.year, date.month, date.day)]
-
-if __name__ == '__main__':
-    w = Weather()

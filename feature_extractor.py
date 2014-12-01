@@ -1,7 +1,5 @@
 #!/usr/bin/python
-
 import ConfigParser
-import math
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cluster import MiniBatchKMeans
 from weather import Weather

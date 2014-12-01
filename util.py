@@ -47,8 +47,8 @@ if __name__ == '__main__':
     Usage: util.py zone_id
     Hacky code to convert zone_id to lat/long coordinates.
 
-    Paste results here to view the region in Google Maps:
-    http://www.darrinward.com/lat-long/
+    Paste results here to view the box region in Google Maps:
+    http://www.darrinward.com/lat-long
     '''
     zone_id = int(sys.argv[1])
     lat = zoneIdToLat(zone_id)
