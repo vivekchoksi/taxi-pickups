@@ -26,10 +26,11 @@ class Weather(object):
     at 40.78 degrees north and -73.97 degrees west. Data source:
     http://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USW00094728/detail
     '''
-    weather = {}
+    weather = None
 
     def __init__(self):
         # Load data set
+        self.weather = {}
         f = open(Const.WEATHER_DATA)
         headers = f.readline().strip().split(',')
         lines = f.readlines()
