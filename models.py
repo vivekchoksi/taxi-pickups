@@ -115,6 +115,7 @@ class LinearRegression(RegressionModel):
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
         svr_regressor = svm.SVR(
+            C=10000000.0, # With lower C values, the SVR underfits.
             verbose=util.VERBOSE
         )
         RegressionModel.__init__(self, database, dataset, svr_regressor)
