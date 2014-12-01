@@ -26,6 +26,17 @@ def _extractDayOfMonth(x, feature_dict):
 def _extractZoneHourOfDay(x, feature_dict):
     feature_dict['ZoneHourOfDay'] = str(x['zone_id']) + '_' + str(x['start_datetime'].hour)
 
+# Concatenates the zone, whether the taxi ride is on a weekend, and the hour
+# of day.
+def _extractZoneHourWeekend(x, feature_dict):
+    feature_dict['ZoneHourWeekend'] = str(x['zone_id']) + '_' + \
+                                      str(_isWeekend(x['start_datetime'])) + '_' + \
+                                      str(x['start_datetime'].hour)
+
+def _isWeekend(date):
+    # Weekday = 0 for Monday.
+    return 1 if date.weekday() >= 5 else 0
+
 def _extractCluster(x, feature_dict):
     feature_dict['Cluster'] = str(x['cluster_id'])
 
@@ -66,6 +77,8 @@ def _getFeatureDict(x):
         _extractDayOfMonth(x, feature_dict)
     if CONFIG.getboolean(FEATURE_SELECTION, 'ZoneHourOfDay'):
         _extractZoneHourOfDay(x, feature_dict)
+    if CONFIG.getboolean(FEATURE_SELECTION, 'ZoneHourWeekend'):
+        _extractZoneHourWeekend(x, feature_dict)
     return feature_dict
 
 def getFeatureVectors(X, use_sparse, is_test=False):
