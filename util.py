@@ -1,4 +1,6 @@
+#!/usr/bin/python
 import operator
+import sys
 from feature_extractor import getFeatureNameIndices
 
 VERBOSE = False
@@ -15,7 +17,7 @@ def printMostPredictiveFeatures(sklearn_model, n):
     coefficients are the highest, and the n features whose coefficients are
     the lowest.
 
-    :param linear_model: any sklearn_model that has the attributes coef_
+    :param linear_model: any sklearn_model that has the attribute coef_
     :param n: number of the best/worst features to print (prints 2n features total)
     """
     if not hasattr(sklearn_model, 'coef_'):
@@ -39,3 +41,20 @@ def zoneIdToLat(zone_id):
 
 def zoneIdToLong(zone_id):
     return (int(zone_id) % 200 - 75 * 100) / 100.0
+
+if __name__ == '__main__':
+    '''
+    Usage: util.py zone_id
+    Hacky code to convert zone_id to lat/long coordinates.
+
+    Paste results here to view the region in Google Maps:
+    http://www.darrinward.com/lat-long/
+    '''
+    zone_id = int(sys.argv[1])
+    lat = zoneIdToLat(zone_id)
+    long = zoneIdToLong(zone_id)
+    print 'Zone ID: %d' % int(zone_id)
+    print '%.2f,%.2f' % (lat + 0.00, long + 0.00)
+    print '%.2f,%.2f' % (lat + 0.01, long + 0.00)
+    print '%.2f,%.2f' % (lat + 0.00, long + 0.01)
+    print '%.2f,%.2f' % (lat + 0.01, long + 0.01)
