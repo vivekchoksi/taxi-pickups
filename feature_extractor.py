@@ -96,7 +96,7 @@ class FeatureExtractor(object):
     def _extractRainfall(self, rainfall, feature_dict):
         if rainfall == 0:
             feature_dict['Rainfall'] = 0
-        elif rainfall < 10:
+        elif rainfall < 100:
             feature_dict['Rainfall'] = 1
         else:
             feature_dict['Rainfall'] = 2

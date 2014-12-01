@@ -41,7 +41,7 @@ class Weather(object):
                                      int(raw_values[1]), # MONTH
                                      int(raw_values[2])) # DAY
             values = {}
-            for index in xrange(2, len(headers)):
+            for index in xrange(3, len(headers)):
                 values[headers[index]] = int(raw_values[index])
             self.weather[date] = values
 
