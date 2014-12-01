@@ -184,7 +184,7 @@ class Evaluator(object):
         '''
         print '\n\tComparison between true and predicted num pickups...'
         print '\t... for', num_examples, 'randomly selected test examples...'
-        print '\tTrue value \t Predicted value'
+        print '\tTrue value\tPredicted value'
 
 
         random_indices = random.sample(xrange(len(true_num_pickups)), num_examples) \
@@ -192,7 +192,7 @@ class Evaluator(object):
             else xrange(len(true_num_pickups))
 
         for i in random_indices:
-            print '\t', true_num_pickups[i], '\t', predicted_num_pickups[i]
+            print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
 

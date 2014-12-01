@@ -1,15 +1,18 @@
 #!/usr/bin/python
 
-import ConfigParser, datetime
+import ConfigParser
+import math
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cluster import MiniBatchKMeans
+from weather import Weather
 
 CONFIG = ConfigParser.RawConfigParser()
 CONFIG.read('features.cfg')
 FEATURE_SELECTION = 'FeatureSelection'
-VECTORIZER = None # Will be set later.
-PRECLUSTER_VECTORIZER = DictVectorizer(sparse=True)
+VECTORIZER = None   # Will be initialized later.
+PRECLUSTER_VECTORIZER = DictVectorizer(sparse=True) # Vectorizer without cluster features.
 CLUSTERER = MiniBatchKMeans(n_clusters=15, init='k-means++')
+WEATHER = None      # Will be initialized later.
 
 def _extractZone(x, feature_dict):
     feature_dict['Zone'] = str(x['zone_id'])
@@ -29,6 +32,18 @@ def _extractZoneHourOfDay(x, feature_dict):
 def _extractCluster(x, feature_dict):
     feature_dict['Cluster'] = str(x['cluster_id'])
 
+def _extractWeather(x, feature_dict):
+    daily_weather = WEATHER.getWeather(x['start_datetime'])
+    _extractRainfall(daily_weather['PRCP'], feature_dict)
+
+def _extractRainfall(rainfall, feature_dict):
+    if rainfall == 0:
+        feature_dict['Rainfall'] = 0
+    elif rainfall < 10:
+        feature_dict['Rainfall'] = 1
+    else:
+        feature_dict['Rainfall'] = 2
+
 def _appendClusterFeatures(feature_dicts, is_test):
     """
     If training, first runs k-means to compute the optimal centroids.
@@ -38,6 +53,7 @@ def _appendClusterFeatures(feature_dicts, is_test):
     :param feature_dict: feature dictionary computed using _getFeatureDict().
     :param is_test: whether extracting features for testing or training purposes.
     """
+    global PRECLUSTER_VECTORIZER
     X_vectors = None
     if not is_test:
         X_vectors = PRECLUSTER_VECTORIZER.fit_transform(feature_dicts)
@@ -66,6 +82,8 @@ def _getFeatureDict(x):
         _extractDayOfMonth(x, feature_dict)
     if CONFIG.getboolean(FEATURE_SELECTION, 'ZoneHourOfDay'):
         _extractZoneHourOfDay(x, feature_dict)
+    if CONFIG.getboolean(FEATURE_SELECTION, 'Weather'):
+        _extractWeather(x, feature_dict)
     return feature_dict
 
 def getFeatureVectors(X, use_sparse, is_test=False):
@@ -84,6 +102,10 @@ def getFeatureVectors(X, use_sparse, is_test=False):
     global VECTORIZER
     if VECTORIZER is None:
         VECTORIZER = DictVectorizer(sparse=use_sparse)
+
+    global WEATHER
+    if CONFIG.getboolean(FEATURE_SELECTION, 'Weather'):
+        WEATHER = Weather()
 
     feature_dicts = [_getFeatureDict(x) for x in X]
 
