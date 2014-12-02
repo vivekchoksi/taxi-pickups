@@ -165,6 +165,7 @@ class Evaluator(object):
         # Plot the prediction error by true number of pickups.
         if self.plot_error:
             self._plotPredictionError(true_num_pickups, predicted_num_pickups)
+            self._plotPredictionHistogram(true_num_pickups, predicted_num_pickups)
 
     def _evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
         '''
@@ -218,6 +219,27 @@ class Evaluator(object):
         # Hard-code xmin, ymin to be -10, and constrain xmax, ymax to be the greater of the two.
         xmin ,xmax, ymin, ymax = plt.axis()
         plt.axis((-10, max(xmax, ymax), -10, max(xmax, ymax)))
+        plt.show()
+
+    def _plotPredictionHistogram(self, true_num_pickups, predicted_num_pickups):
+        '''
+        Plots two histograms side-by-side showing the distribution of true and
+        predicted number of pickups.
+        '''
+        # Plot histogram.
+        num_bins = 30
+        plt.hist([predicted_num_pickups, true_num_pickups], num_bins, \
+                 label=['Predicted number of pickups', 'True number of pickups'], \
+                 alpha=0.5
+        )
+        plt.yscale('log')
+        plt.legend()
+
+        # Label histogram.
+        plt.title('Histogram of the number of taxi pickups')
+        plt.xlabel('Number of taxi pickups in any zone and hour-long time slot')
+        plt.ylabel('Frequency')
+
         plt.show()
 
 def getModel(model_name, database, dataset):
