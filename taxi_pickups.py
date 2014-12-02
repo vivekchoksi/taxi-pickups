@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import sys
+import numpy as np
+import matplotlib.pyplot as plt
 import random
 import MySQLdb
 from sklearn.metrics import mean_squared_error
@@ -137,9 +138,10 @@ class Dataset(object):
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
 
-    def __init__(self, model, dataset):
+    def __init__(self, model, dataset, plot_error):
         self.model = model
         self.dataset = dataset
+        self.plot_error = plot_error
 
     def evaluate(self):
         '''
@@ -159,6 +161,10 @@ class Evaluator(object):
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
+
+        # Plot the prediction error by true number of pickups.
+        if self.plot_error:
+            self._plotPredictionError(true_num_pickups, predicted_num_pickups)
 
     def _evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
         '''
@@ -186,7 +192,6 @@ class Evaluator(object):
         print '\t... for', num_examples, 'randomly selected test examples...'
         print '\tTrue value\tPredicted value'
 
-
         random_indices = random.sample(xrange(len(true_num_pickups)), num_examples) \
             if len(true_num_pickups) > num_examples \
             else xrange(len(true_num_pickups))
@@ -195,6 +200,23 @@ class Evaluator(object):
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
+    def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
+        error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
+        area = [50]*len(error)
+        plt.scatter(true_num_pickups, error, s=area, alpha=0.1, edgecolors='none')
+
+        # Decorate plot.
+        plt.grid(True)
+        plt.ylabel('Prediction Error')
+        plt.xlabel('True Number of Pickups')
+        plt.title('True Number of Pickups vs. Prediction Error')
+        plt.yscale('log')
+        plt.xscale('log')
+
+        # Hard-code xmin, ymin to be -10, and constraint xmax, ymax to be the greater of the two.
+        xmin ,xmax, ymin, ymax = plt.axis()
+        plt.axis((-10, max(xmax, ymax), -10, max(xmax, ymax)))
+        plt.show()
 
 def getModel(model_name, database, dataset):
     lower_name = model_name.lower()
@@ -224,6 +246,9 @@ def getOptions():
     parser.add_option('-n', '--numexamples', type='int', dest='num_examples',
                       default=Const.DATASET_SIZE, help='use a dataset of size NUM',
                       metavar='NUM')
+    parser.add_option('-p', '--plot_error',
+                      action='store_true', dest='plot_error', default=False,
+                      help='generate prediction error scatter plot')
     options, args = parser.parse_args()
 
     if not options.model:
@@ -245,7 +270,7 @@ def main(args):
 
     # Instantiate the specified learning model.
     model = getModel(options.model, database, dataset)
-    evaluator = Evaluator(model, dataset)
+    evaluator = Evaluator(model, dataset, options.plot_error)
 
     # Train the model.
     util.verbosePrint('\nTRAINING', model, '...')
