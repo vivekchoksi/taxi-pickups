@@ -1,13 +1,13 @@
 #!/usr/bin/python
-import MySQLdb
 import sys
 import operator
+from abc import ABCMeta, abstractmethod
+from sklearn import linear_model, svm, tree
 import util
 import numpy as np
-from sklearn import linear_model, preprocessing, svm, tree
-from abc import ABCMeta, abstractmethod
 from const import Const
 from feature_extractor import FeatureExtractor
+
 
 # Interface for our learning models.
 class Model(object):

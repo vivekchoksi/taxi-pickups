@@ -4,6 +4,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.cluster import MiniBatchKMeans
 from weather import Weather
 
+
 FEATURE_SELECTION = 'FeatureSelection'
 
 class FeatureExtractor(object):

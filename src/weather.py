@@ -1,6 +1,8 @@
 #!/usr/bin/python
-from const import Const
 import datetime
+
+from const import Const
+
 
 class Weather(object):
     '''

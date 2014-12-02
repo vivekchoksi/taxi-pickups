@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
-import numpy as np
-import matplotlib.pyplot as plt
 import random
-import MySQLdb
-from sklearn.metrics import mean_squared_error
 from math import sqrt
-from models import *
 from optparse import OptionParser
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+import MySQLdb
+from models import *
+
 
 class Database(object):
 

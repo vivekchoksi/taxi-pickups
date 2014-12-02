@@ -1,8 +1,8 @@
 #!/usr/bin/python
-
-from taxi_pickups import *
+import unittest
+import datetime
 import feature_extractor
-import unittest, datetime
+from taxi_pickups import *
 
 class TestFeatureExtractor(unittest.TestCase):
 
