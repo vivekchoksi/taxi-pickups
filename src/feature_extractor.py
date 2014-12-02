@@ -11,7 +11,7 @@ class FeatureExtractor(object):
 
     def __init__(self, use_sparse):
         self.config = ConfigParser.RawConfigParser()
-        self.config.read('features.cfg')
+        self.config.read('src/features.cfg')
         self.vectorizer = DictVectorizer(sparse=use_sparse)
 
         if self.config.getboolean(FEATURE_SELECTION, 'Cluster'):

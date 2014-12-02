@@ -202,8 +202,10 @@ class Evaluator(object):
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
-        area = [50]*len(error)
-        plt.scatter(true_num_pickups, error, s=area, alpha=0.1, edgecolors='none')
+
+        # Set area of all bubbles to be 50.
+        area = [70]*len(error)
+        plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
 
         # Decorate plot.
         plt.grid(True)
@@ -213,7 +215,7 @@ class Evaluator(object):
         plt.yscale('log')
         plt.xscale('log')
 
-        # Hard-code xmin, ymin to be -10, and constraint xmax, ymax to be the greater of the two.
+        # Hard-code xmin, ymin to be -10, and constrain xmax, ymax to be the greater of the two.
         xmin ,xmax, ymin, ymax = plt.axis()
         plt.axis((-10, max(xmax, ymax), -10, max(xmax, ymax)))
         plt.show()
