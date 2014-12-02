@@ -211,9 +211,9 @@ class Evaluator(object):
         plt.grid(True)
         plt.ylabel('Prediction Error')
         plt.xlabel('True Number of Pickups')
-        plt.title('True Number of Pickups vs. Prediction Error')
-        plt.yscale('log')
-        plt.xscale('log')
+        plt.title('True Number of Pickups vs. Prediction Error \nModel: %s' % self.model)
+        # plt.yscale('log')
+        # plt.xscale('log')
 
         # Hard-code xmin, ymin to be -10, and constrain xmax, ymax to be the greater of the two.
         xmin ,xmax, ymin, ymax = plt.axis()
