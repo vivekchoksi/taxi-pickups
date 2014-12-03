@@ -181,8 +181,13 @@ class Evaluator(object):
             self._printRandomTrainingExamples(true_num_pickups, predicted_num_pickups)
 
         # Compute and print root mean squared error.
-        rms = sqrt(mean_squared_error(true_num_pickups, predicted_num_pickups))
-        print 'RMSD: %f' % rms
+        msd = mean_squared_error(true_num_pickups, predicted_num_pickups)
+        rmsd = sqrt(msd)
+        print 'RMSD: %f' % rmsd
+
+        sum_squared_errors = msd * float(len(true_num_pickups))
+        mit_metric = 1.0 / (1.0 + sqrt(sum_squared_errors))
+        print 'MIT metric: %f' % mit_metric
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
