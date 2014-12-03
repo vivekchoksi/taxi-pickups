@@ -4,7 +4,7 @@
 Plotting Learning Curves
 ========================
 """
-import os, sys
+import os
 os.environ['MPLCONFIGDIR'] = "../"
 import numpy as np
 import matplotlib.pyplot as plt
@@ -111,8 +111,8 @@ def getModel(model_name, database, dataset):
     raise Exception('Model with name %s not supported for learning curves.' % \
         model_name)
 
-def extractDataset(dataset):
-    feature_extractor = FeatureExtractor(True)
+def extractDataset(dataset, model_name):
+    feature_extractor = FeatureExtractor(model_name != 'dtr')
     row_dicts = []
     while dataset.hasMoreTrainExamples():
         row_dicts.extend(dataset.getTrainExamples(Const.TRAIN_BATCH_SIZE))
@@ -160,19 +160,19 @@ def getOptions():
 
     return options, args
 
-def main(args):
+def main():
     options, args = getOptions()
     database = Database()
     dataset = Dataset(0.7, options.num_examples, database, 
         Const.AGGREGATED_PICKUPS)
-    X, y = extractDataset(dataset)
+    X, y = extractDataset(dataset, options.model)
     model = getModel(options.model, database, dataset)
     title = "Learning Curves (%s)" % model
     cv = getCrossValidator(options.num_iter, options.train_fraction, 
         options.num_examples)
-    plotLearningCurve(model, title, X, y, ylim=(0.2, 1.01), cv=cv, n_jobs=4)
+    plotLearningCurve(model, title, X, y, ylim=(0.5, 1.01), cv=cv, n_jobs=4)
     plt.show()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
