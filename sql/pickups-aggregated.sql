@@ -1,4 +1,4 @@
--- File: pickups-aggregated-josh.sql
+-- File: pickups-aggregated.sql
 -- ---------------------------------
 -- SQL query to create a table with taxi
 -- pickup counts aggregated by time and location
@@ -52,8 +52,8 @@ SELECT
     count(id) as num_pickups
 FROM trip_data
 WHERE
-    pickup_latitude BETWEEN 40 AND 41 AND
-    pickup_longitude BETWEEN -75 AND -73
+    pickup_latitude BETWEEN 40.5 AND 41.0 AND
+    pickup_longitude BETWEEN -74.3 AND -73.7
 GROUP BY CONCAT(
     FLOOR(pickup_longitude * 100), '_',
     FLOOR(pickup_latitude * 100), '_',
