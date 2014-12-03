@@ -7,7 +7,7 @@ class Const(object):
     TRAIN_BATCH_SIZE = 40000
 
     # Number of rows in January aggregated pickups table.
-    DATASET_SIZE = 143649
+    DATASET_SIZE = 349680
     
 
     

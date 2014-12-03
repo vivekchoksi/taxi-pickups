@@ -39,7 +39,7 @@ CREATE TABLE pickups_aggregated_temp (
 
     -- Total number of pickups.
     num_pickups INT NOT NULL,
-    UNIQUE(start_datetime, zone_id)
+    UNIQUE(zone_id, start_datetime)
 );
 
 INSERT INTO pickups_aggregated_temp
@@ -58,6 +58,21 @@ GROUP BY CONCAT(
     FLOOR(pickup_longitude * 100), '_',
     FLOOR(pickup_latitude * 100), '_',
     DATE_FORMAT(pickup_datetime, '%Y-%m-%d %H:00:00')
+);
+
+-- #### Remove rows for zones which have fewer than 30 pickups in the whole month.
+CREATE TABLE zones_to_remove (
+    zone_id INT NOT NULL
+);
+
+INSERT INTO zones_to_remove (
+    SELECT zone_id FROM pickups_aggregated_temp 
+    GROUP by zone_id HAVING SUM(num_pickups) < 30
+);
+
+DELETE FROM pickups_aggregated_temp
+WHERE zone_id IN (
+    SELECT zone_id FROM zones_to_remove
 );
 
 -- #### Next, find all rows with zero pickups and insert
@@ -89,8 +104,7 @@ DROP TABLE IF EXISTS pickups_aggregated;
 CREATE TABLE pickups_aggregated (
     start_datetime DATETIME NOT NULL,
     zone_id INT NOT NULL,
-    num_pickups INT NOT NULL,
-    UNIQUE(start_datetime, zone_id)
+    num_pickups INT NOT NULL
 );
 
 ALTER TABLE pickups_aggregated AUTO_INCREMENT=1;
@@ -98,7 +112,7 @@ ALTER TABLE pickups_aggregated AUTO_INCREMENT=1;
 INSERT INTO pickups_aggregated (
     SELECT * from pickups_aggregated_temp
     ORDER BY start_datetime
-);
+) ORDER BY start_datetime;
 
 ALTER TABLE `pickups_aggregated` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
 KEY FIRST;

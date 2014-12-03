@@ -77,7 +77,7 @@ class Plotter(object):
 
         for row in self.data:
             hour = row['start_datetime'].hour
-            num_pickups[hour] += 1
+            num_pickups[hour] += row['num_pickups']
 
         # Plot bar chart.
         # FIXME: X label and tick mark positioning.
@@ -141,8 +141,8 @@ def main(args):
     plotter = Plotter(database, Const.AGGREGATED_PICKUPS)
     # plotter.plotNumPickups()
     # plotter.plotNumPickupsByDay()
-    # plotter.plotNumPickupsByHour()
-    plotter.plotNumPickupsByZone()
+    plotter.plotNumPickupsByHour()
+    # plotter.plotNumPickupsByZone()
 
 if __name__ == '__main__':
     main(sys.argv)
