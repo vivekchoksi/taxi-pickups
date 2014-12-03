@@ -60,7 +60,11 @@ GROUP BY CONCAT(
     DATE_FORMAT(pickup_datetime, '%Y-%m-%d %H:00:00')
 );
 
+
 -- #### Remove rows for zones which have fewer than 30 pickups in the whole month.
+
+DROP TABLE IF EXISTS zones_to_remove;
+
 CREATE TABLE zones_to_remove (
     zone_id INT NOT NULL
 );
@@ -117,6 +121,5 @@ INSERT INTO pickups_aggregated (
 ALTER TABLE `pickups_aggregated` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
 KEY FIRST;
 
-DROP TABLE pickups_aggregated_temp;
 
-ALTER TABLE pickups_aggregated ADD CONSTRAINT unique_zones_times UNIQUE(zone_id, start_datetime);
+-- ALTER TABLE pickups_aggregated ADD CONSTRAINT unique_zones_times UNIQUE(zone_id, start_datetime);

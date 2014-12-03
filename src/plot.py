@@ -83,7 +83,7 @@ class Plotter(object):
         # FIXME: X label and tick mark positioning.
         width = 1
         fig, ax = plt.subplots()
-        ax.bar(hours_in_day - width / 2.0, num_pickups, width=width, alpha=0.5)
+        ax.bar(hours_in_day + width / 2.0, num_pickups, width=width, alpha=0.5)
         ax.set_xticks(hours_in_day+width)
 
         # Label bar chart.
