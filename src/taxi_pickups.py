@@ -290,7 +290,7 @@ def getOptions():
 
     return options, args
 
-def main(args):
+def main():
     options, args = getOptions()
 
     database = Database()
@@ -310,4 +310,4 @@ def main(args):
     evaluator.evaluate()
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
