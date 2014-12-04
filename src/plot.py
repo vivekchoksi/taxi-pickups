@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from optparse import OptionParser
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -15,6 +16,7 @@ class Plotter(object):
         query_string = ('SELECT * FROM %s limit %d') \
                         % (table_name, num_examples)
         self.data = self.db.execute_query(query_string)
+        matplotlib.rcParams.update({'font.size': 18})
 
     def plotNumPickups(self):
         '''
@@ -41,6 +43,9 @@ class Plotter(object):
     def plotNumPickupsByDay(self):
         '''
         Plot a histogram showing the distribution of true number of pickups.
+        by day of week. NOTE: This plot may be misleading, since there are
+        more Tuesdays/Wednesdays/Thursdays in this month (Jan 2013) than
+        other days.
         '''
         # Get data into arrays.
         num_days_in_week = 7
@@ -49,10 +54,10 @@ class Plotter(object):
 
         for row in self.data:
             day = row['start_datetime'].weekday()
-            num_pickups[day] += 1
+            num_pickups[day] += row['num_pickups']
 
         # Plot bar chart.
-        width = 1
+        width = 0.7
         fig, ax = plt.subplots()
         ax.bar(days_in_week + width / 2.0, num_pickups, width=width, alpha=0.5)
         ax.set_xticks(days_in_week+width)
@@ -140,8 +145,8 @@ def main(args):
     database = taxi_pickups.Database()
     plotter = Plotter(database, Const.AGGREGATED_PICKUPS)
     # plotter.plotNumPickups()
-    # plotter.plotNumPickupsByDay()
-    plotter.plotNumPickupsByHour()
+    plotter.plotNumPickupsByDay()
+    # plotter.plotNumPickupsByHour()
     # plotter.plotNumPickupsByZone()
 
 if __name__ == '__main__':

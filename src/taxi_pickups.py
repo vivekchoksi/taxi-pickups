@@ -211,13 +211,18 @@ class Evaluator(object):
 
         # Set area of all bubbles to be 50.
         area = [70]*len(error)
-        plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
+        # plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
+        plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
 
+        X_line = range(max(true_num_pickups))
+        plt.plot(X_line, X_line, 'g--', label='perfect prediction line')
         # Decorate plot.
         plt.grid(True)
-        plt.ylabel('Prediction Error')
+        plt.ylabel('Predicted Number of Pickups')
         plt.xlabel('True Number of Pickups')
-        plt.title('True Number of Pickups vs. Prediction Error \nModel: %s' % self.model)
+        plt.title('Predicted vs. True Number of Pickups  \nModel: %s' % self.model)
+
+        plt.legend(loc='best')
         # plt.yscale('log')
         # plt.xscale('log')
 
