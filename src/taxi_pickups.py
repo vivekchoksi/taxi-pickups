@@ -6,7 +6,7 @@ import random
 from math import sqrt
 from optparse import OptionParser
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
+import sklearn.metrics as metrics
 import MySQLdb
 from models import *
 
@@ -182,14 +182,26 @@ class Evaluator(object):
         if util.VERBOSE:
             self._printRandomTrainingExamples(true_num_pickups, predicted_num_pickups)
 
+        # Compute and print explained variance score.
+        m = metrics.explained_variance_score(true_num_pickups, predicted_num_pickups)
+        print 'Explained Variance Score: %f' % m
+
+        # Compute and print mean absolute error.
+        m = metrics.mean_absolute_error(true_num_pickups, predicted_num_pickups)
+        print 'Mean Absolute Error: %f' % m
+
         # Compute and print root mean squared error.
-        msd = mean_squared_error(true_num_pickups, predicted_num_pickups)
+        msd = metrics.mean_squared_error(true_num_pickups, predicted_num_pickups)
         rmsd = sqrt(msd)
         print 'RMSD: %f' % rmsd
 
         sum_squared_errors = msd * float(len(true_num_pickups))
         mit_metric = 1.0 / (1.0 + sqrt(sum_squared_errors))
         print 'MIT metric: %f' % mit_metric
+
+        # Compute and print coefficient of determination R^2.
+        m = metrics.r2_score(true_num_pickups, predicted_num_pickups)
+        print 'R^2 Score: %f' % m
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
