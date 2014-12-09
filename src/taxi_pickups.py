@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
+import os
+os.environ['MPLCONFIGDIR'] = "../"
 import random
 from math import sqrt
 from optparse import OptionParser
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
+import sklearn.metrics as metrics
 import MySQLdb
 from models import *
 
@@ -180,14 +182,22 @@ class Evaluator(object):
         if util.VERBOSE:
             self._printRandomTrainingExamples(true_num_pickups, predicted_num_pickups)
 
+        # Compute and print mean absolute error.
+        m = metrics.mean_absolute_error(true_num_pickups, predicted_num_pickups)
+        print 'Mean Absolute Error: %f' % m
+
         # Compute and print root mean squared error.
-        msd = mean_squared_error(true_num_pickups, predicted_num_pickups)
+        msd = metrics.mean_squared_error(true_num_pickups, predicted_num_pickups)
         rmsd = sqrt(msd)
         print 'RMSD: %f' % rmsd
 
         sum_squared_errors = msd * float(len(true_num_pickups))
         mit_metric = 1.0 / (1.0 + sqrt(sum_squared_errors))
         print 'MIT metric: %f' % mit_metric
+
+        # Compute and print coefficient of determination R^2.
+        m = metrics.r2_score(true_num_pickups, predicted_num_pickups)
+        print 'R^2 Score: %f' % m
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
@@ -211,13 +221,18 @@ class Evaluator(object):
 
         # Set area of all bubbles to be 50.
         area = [70]*len(error)
-        plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
+        # plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
+        plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
 
+        X_line = range(max(true_num_pickups))
+        plt.plot(X_line, X_line, 'g--', label='perfect prediction line')
         # Decorate plot.
         plt.grid(True)
-        plt.ylabel('Prediction Error')
+        plt.ylabel('Predicted Number of Pickups')
         plt.xlabel('True Number of Pickups')
-        plt.title('True Number of Pickups vs. Prediction Error \nModel: %s' % self.model)
+        plt.title('Predicted vs. True Number of Pickups  \nModel: %s' % self.model)
+
+        plt.legend(loc='best')
         # plt.yscale('log')
         # plt.xscale('log')
 
@@ -259,6 +274,10 @@ def getModel(model_name, database, dataset):
         return SupportVectorRegression(database, dataset)
     elif lower_name == 'dtr':
         return DecisionTreeRegression(database, dataset)
+    elif lower_name == 'autolinear':
+        return AutoTunedLinearRegression(database, dataset)
+    elif lower_name == 'autodtr':
+        return AutoTunedDecisionTree(database, dataset)
     raise Exception('No model with name %s' % model_name)
 
 def getOptions():

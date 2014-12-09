@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import sys
+import sys, random
+import numpy as np
 
 VERBOSE = False
 
@@ -14,6 +15,28 @@ def zoneIdToLat(zone_id):
 
 def zoneIdToLong(zone_id):
     return (int(zone_id) % 200 - 75 * 100) / 100.0
+
+def getCrossValidator(num_iter, train_fraction, num_examples):
+    verbosePrint(
+        'Num Iterations: %d\n' % num_iter, 
+        'Train Fraction: %0.2f\n' % train_fraction, 
+        'Num Examples passed in: %d\n' % num_examples
+    )
+    max_id = num_examples
+    max_train_id = int(train_fraction * max_id)
+    test_ids = np.array(range(max_train_id, max_id))
+    cv = []
+
+    for _ in range(num_iter):
+        train_ids = range(max_train_id)
+        random.shuffle(train_ids)
+        cv.append((np.array(train_ids), test_ids))
+
+    # for train_indices, test_indices in cv:
+    #     verbosePrint("Train:", train_indices)
+    #     verbosePrint("Test:", test_indices)
+
+    return cv
 
 if __name__ == '__main__':
     '''

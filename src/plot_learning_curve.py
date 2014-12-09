@@ -8,7 +8,7 @@ import os
 os.environ['MPLCONFIGDIR'] = "../"
 import numpy as np
 import matplotlib.pyplot as plt
-import random, util
+import util
 from optparse import OptionParser
 from sklearn.learning_curve import learning_curve
 from taxi_pickups import *
@@ -75,29 +75,6 @@ def plotLearningCurve(model, title, X, y, ylim=None, cv=None,
 
     plt.legend(loc="best")
     return plt
-
-
-def getCrossValidator(num_iter, train_fraction, num_examples):
-    util.verbosePrint(
-        'Num Iterations: %d\n' % num_iter, 
-        'Train Fraction: %0.2f\n' % train_fraction, 
-        'Num Examples passed in: %d\n' % num_examples
-    )
-    max_id = num_examples
-    max_train_id = int(train_fraction * max_id)
-    test_ids = np.array(range(max_train_id, max_id))
-    cv = []
-
-    for _ in range(num_iter):
-        train_ids = range(max_train_id)
-        random.shuffle(train_ids)
-        cv.append((np.array(train_ids), test_ids))
-
-    for train_indices, test_indices in cv:
-        util.verbosePrint("Train:", train_indices)
-        util.verbosePrint("Test:", test_indices)
-
-    return cv
 
 
 def getModel(model_name, database, dataset):
@@ -168,7 +145,7 @@ def main():
     X, y = extractDataset(dataset, options.model)
     model = getModel(options.model, database, dataset)
     title = "Learning Curves (%s)" % model
-    cv = getCrossValidator(options.num_iter, options.train_fraction, 
+    cv = util.getCrossValidator(options.num_iter, options.train_fraction, 
         options.num_examples)
     plotLearningCurve(model, title, X, y, ylim=(0.5, 1.01), cv=cv, n_jobs=4)
     plt.show()
