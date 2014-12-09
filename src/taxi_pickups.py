@@ -182,10 +182,6 @@ class Evaluator(object):
         if util.VERBOSE:
             self._printRandomTrainingExamples(true_num_pickups, predicted_num_pickups)
 
-        # Compute and print explained variance score.
-        m = metrics.explained_variance_score(true_num_pickups, predicted_num_pickups)
-        print 'Explained Variance Score: %f' % m
-
         # Compute and print mean absolute error.
         m = metrics.mean_absolute_error(true_num_pickups, predicted_num_pickups)
         print 'Mean Absolute Error: %f' % m
