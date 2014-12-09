@@ -2,7 +2,7 @@
 import sys
 import operator
 from abc import ABCMeta, abstractmethod
-from sklearn import linear_model, svm, tree
+from sklearn import linear_model, svm, tree, grid_search
 import util
 import numpy as np
 from const import Const
@@ -135,6 +135,38 @@ class LinearRegression(RegressionModel):
     def __str__(self):
         return 'linear [linear regression model]'
 
+class AutoTunedLinearRegression(RegressionModel):
+    """
+    Hyperparameters are auto tuned using GridSearchCV.
+    """
+    def __init__(self, database, dataset):
+        params = {
+            'n_iter': [2000, 3000, 4000],
+            'alpha': [0.0],
+            'learning_rate': ['invscaling'],
+            'eta0': [0.1, 0.2, 0.3],
+            'power_t': [0.05, 0.1, 0.2]
+        }
+        sgd_regressor = grid_search.GridSearchCV(
+            linear_model.SGDRegressor(),
+            params, 
+            n_jobs=4,
+            refit=True,
+            cv=util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft),
+            verbose=1 if util.VERBOSE else 0
+        )
+        RegressionModel.__init__(self, database, dataset, sgd_regressor)
+
+    def train(self):
+        super(AutoTunedLinearRegression, self).train()
+        if util.VERBOSE:
+            print "\nOptimal Parameters: %s" % self.get_params()
+
+    def get_params(self):
+        return self.regressor.best_params_
+
+    def __str__(self):
+        return 'linear [auto tuned linear regression model]'
 
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
