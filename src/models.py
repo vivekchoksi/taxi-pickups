@@ -119,6 +119,31 @@ class RegressionModel(Model):
         [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
         [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
 
+class AutoTunedRegressionModel(RegressionModel):
+    __metaclass__ = ABCMeta
+
+    """
+    Regression model whose Hyperparameters are automatically tuned on training
+    data through cross-validation and grid search.
+    """
+    def __init__(self, database, dataset, regressor_model, params, n_jobs=4, cv=3, sparse=True):
+        sgd_regressor = grid_search.GridSearchCV(
+            regressor_model,
+            params, 
+            n_jobs=n_jobs,
+            refit=True,
+            cv=cv,
+            verbose=1 if util.VERBOSE else 0
+        )
+        RegressionModel.__init__(self, database, dataset, sgd_regressor, sparse)
+
+    def train(self):
+        super(AutoTunedRegressionModel, self).train()
+        if util.VERBOSE:
+            print "\nOptimal Parameters: %s" % self.get_params()
+
+    def get_params(self):
+        return self.regressor.best_params_
 
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
@@ -135,10 +160,8 @@ class LinearRegression(RegressionModel):
     def __str__(self):
         return 'linear [linear regression model]'
 
-class AutoTunedLinearRegression(RegressionModel):
-    """
-    Hyperparameters are auto tuned using GridSearchCV.
-    """
+class AutoTunedLinearRegression(AutoTunedRegressionModel):
+
     def __init__(self, database, dataset):
         params = {
             'n_iter': [2000, 3000, 4000],
@@ -147,26 +170,12 @@ class AutoTunedLinearRegression(RegressionModel):
             'eta0': [0.1, 0.2, 0.3],
             'power_t': [0.05, 0.1, 0.2]
         }
-        sgd_regressor = grid_search.GridSearchCV(
-            linear_model.SGDRegressor(),
-            params, 
-            n_jobs=4,
-            refit=True,
-            cv=util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft),
-            verbose=1 if util.VERBOSE else 0
-        )
-        RegressionModel.__init__(self, database, dataset, sgd_regressor)
-
-    def train(self):
-        super(AutoTunedLinearRegression, self).train()
-        if util.VERBOSE:
-            print "\nOptimal Parameters: %s" % self.get_params()
-
-    def get_params(self):
-        return self.regressor.best_params_
+        sgd_regressor = linear_model.SGDRegressor()
+        cv = util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft)
+        AutoTunedRegressionModel.__init__(self, database, dataset, sgd_regressor, params, cv=cv)
 
     def __str__(self):
-        return 'linear [auto tuned linear regression model]'
+        return 'autolinear [auto tuned linear regression model]'
 
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
@@ -193,6 +202,21 @@ class DecisionTreeRegression(RegressionModel):
 
     def __str__(self):
         return 'dtr [decision tree regression model]'
+
+class AutoTunedDecisionTree(AutoTunedRegressionModel):
+
+    def __init__(self, database, dataset):
+        params = {
+            'max_features': [0.7, 0.9, 'sqrt'],
+            'max_depth': [10, 50, 100],
+            'min_samples_leaf': [2, 5, 10]
+        }
+        dt_regressor = tree.DecisionTreeRegressor()
+        cv = util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft)
+        AutoTunedRegressionModel.__init__(self, database, dataset, dt_regressor, params, cv=cv, sparse=False)
+
+    def __str__(self):
+        return 'autodtr [auto tuned decision tree regression model]'
 
 # Predicts taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.

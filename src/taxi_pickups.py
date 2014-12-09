@@ -276,6 +276,8 @@ def getModel(model_name, database, dataset):
         return DecisionTreeRegression(database, dataset)
     elif lower_name == 'autolinear':
         return AutoTunedLinearRegression(database, dataset)
+    elif lower_name == 'autodtr':
+        return AutoTunedDecisionTree(database, dataset)
     raise Exception('No model with name %s' % model_name)
 
 def getOptions():
