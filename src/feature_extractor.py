@@ -64,9 +64,6 @@ class FeatureExtractor(object):
     def _extractDayOfWeek(self, x, feature_dict):
         feature_dict['DayOfWeek'] = str(x['start_datetime'].weekday())
 
-    def _extractDayOfMonth(self, x, feature_dict):
-        feature_dict['DayOfMonth'] = str(x['start_datetime'].day)
-
     def _extractZoneHourOfDay(self, x, feature_dict):
         feature_dict['Zone_HourOfDay'] = str(x['zone_id']) + '_' + str(x['start_datetime'].hour)
 
@@ -135,8 +132,6 @@ class FeatureExtractor(object):
             self._extractHourOfDay(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'DayOfWeek'):
             self._extractDayOfWeek(x, feature_dict)
-        if self.config.getboolean(FEATURE_SELECTION, 'DayOfMonth'):
-            self._extractDayOfMonth(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_HourOfDay'):
             self._extractZoneHourOfDay(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Weather'):
