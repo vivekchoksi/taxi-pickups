@@ -52,3 +52,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# dot files representing decision trees
+*.dot
+src/*.dot

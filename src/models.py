@@ -4,6 +4,7 @@ import operator
 from abc import ABCMeta, abstractmethod
 from sklearn import linear_model, svm, tree, grid_search
 import util
+from time import time
 import numpy as np
 from const import Const
 from feature_extractor import FeatureExtractor
@@ -52,6 +53,8 @@ class RegressionModel(Model):
         # regression model require a dense representation.)
         self.feature_extractor = FeatureExtractor(sparse)
 
+        util.verbosePrint(self.regressor)
+
     def train(self):
         '''
         See Model for comments on the parameters and return value.
@@ -74,6 +77,8 @@ class RegressionModel(Model):
         if util.VERBOSE:
             self._printMemoryStats(row_dicts, X)
             self._printMostPredictiveFeatures(15)
+            if isinstance(self.regressor, tree.DecisionTreeRegressor):
+                self._exportToDotfile()
 
     def predict(self, test_example):
         '''
@@ -96,13 +101,13 @@ class RegressionModel(Model):
             print '\tVectorized training data: \t', sys.getsizeof(X), " bytes used\n"
 
     def _printMostPredictiveFeatures(self, n):
-        """
+        '''
         If the input model has feature coefficients, prints the n features whose
         coefficients are the highest, and the n features whose coefficients are
         the lowest.
 
         :param n: number of the best/worst features to print (prints 2n features total)
-        """
+        '''
         if not hasattr(self.regressor, 'coef_'):
             print '\tCannot print out the most predictive features for the model.'
             return
@@ -118,6 +123,21 @@ class RegressionModel(Model):
         print ('\tFeature\t\tWeight')
         [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
         [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
+
+    def _exportToDotfile(self):
+        '''
+        Expecting that self.regressor is a decision tree regressor model, export the
+        trained decision tree to a .dot file.
+        '''
+        out_file_prefix = 'dtr_' + str(int(time()))
+        out_file_dot = out_file_prefix + '.dot'
+        out_file_png = out_file_prefix + '.png'
+        print '\n\tExporting decision tree to dotfile: ' + out_file_dot
+        print '\tTo view the graph, first convert to png using the ' \
+            'command: dot -Tpng %s %s' % (out_file_dot, out_file_png)
+        print '\tNote: this command requires the program graphviz, which ' \
+            'is installed on the corn machines.'
+        tree.export_graphviz(self.regressor, out_file=out_file_dot)
 
 class AutoTunedRegressionModel(RegressionModel):
     __metaclass__ = ABCMeta
