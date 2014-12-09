@@ -123,7 +123,7 @@ class RegressionModel(Model):
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
         sgd_regressor = linear_model.SGDRegressor(
-            n_iter=1000, # Takes many iterations to converge.
+            n_iter=3000, # Takes many iterations to converge.
             alpha=0.0, # Works better without regularization.
             learning_rate='invscaling',
             eta0=0.1, # Converges faster with higher-than-default initial learning rate.
