@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+os.environ['MPLCONFIGDIR'] = "../"
 import random
 from math import sqrt
 from optparse import OptionParser
