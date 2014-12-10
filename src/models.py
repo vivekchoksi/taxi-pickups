@@ -3,6 +3,9 @@ import sys
 import operator
 from abc import ABCMeta, abstractmethod
 from sklearn import linear_model, svm, tree, grid_search
+from pybrain.tools.shortcuts import buildNetwork
+from pybrain.supervised.trainers import BackpropTrainer
+from pybrain.datasets import SupervisedDataSet
 import util
 from time import time
 import numpy as np
@@ -138,6 +141,54 @@ class RegressionModel(Model):
         print '\tNote: this command requires the program graphviz, which ' \
             'is installed on the corn machines.'
         tree.export_graphviz(self.regressor, out_file=out_file_dot)
+
+class NueralNetworkRegressionModel(RegressionModel):
+    __metaclass__ = ABCMeta
+
+    """
+    Neural network regression model using the PyBrain library.
+    """
+    def __init__(self, database, dataset):
+        nnr = NeuralNetworkRegressor()
+        RegressionModel.__init__(self, database, dataset, nnr, sparse=False)
+
+    def __str__(self):
+        return 'neural network [neural network model]'
+
+
+class NeuralNetworkRegressor:
+    """
+    This is a wrapper around PyBrain's neural network library. This wrapper implements an API
+    similar to the interface for sklearn's regressors.
+    """
+
+    def __init__(self):
+        # TODO(figure out ballpark number of hidden layers, and how large to make them.
+        self.nnw = buildNetwork(100, 100, 1)
+
+    def fit(self, X, y):
+        '''
+        Trains the model.
+
+        :param X: list of numpy arrays representing the training samples.
+        :param y: numpy array representing the training samples' true values.
+        '''
+        num_x_dimensions = len(X[0])
+        num_y_dimensions = 1
+        data_set = SupervisedDataSet(num_x_dimensions, num_y_dimensions)
+        for i in xrange(len(y)):
+            data_set.addSample(X[i], y[i])
+        self.trainer = BackpropTrainer(self.nnw, data_set)
+        self.trainer.trainUntilConvergence()
+
+    def predict(self, x):
+        '''
+        Predicts the output for sample x.
+
+        :param x: array defining one sample.
+        :return array(y), where array is a numpy array
+        '''
+        return self.nnw.activate(x)
 
 class AutoTunedRegressionModel(RegressionModel):
     __metaclass__ = ABCMeta
