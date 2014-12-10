@@ -16,5 +16,5 @@
 pip install --user MySQL-python==1.2.5
 
 # CONFIGURE THIS TO BE THE COMMAND YOU WANT TO RUN.
-time python taxi_pickups.py -m linear -n 1000 -v
+time python taxi_pickups.py -m autolinear -v
 

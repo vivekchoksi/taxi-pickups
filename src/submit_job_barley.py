@@ -10,5 +10,5 @@ import os
 #	mem_free=1G ... request 1 GB per core
 #	-pe shm 4 ... request 4 cores
 # os.system('qsub -l mem_free=2G -pe shm 4 -N taxi_pickups_linear run_taxi_pickups.sh')
-os.system('qsub -N taxi_pickups_linear run_taxi_pickups.sh')
+os.system('qsub -l mem_free=1G -pe shm 4 -N taxi_pickups_linear run_taxi_pickups_barley.sh')
 
