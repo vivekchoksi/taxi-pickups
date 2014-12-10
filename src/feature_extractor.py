@@ -3,7 +3,7 @@ import ConfigParser
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cluster import MiniBatchKMeans
 from weather import Weather
-
+import util
 
 FEATURE_SELECTION = 'FeatureSelection'
 
@@ -17,8 +17,15 @@ class FeatureExtractor(object):
         if self.config.getboolean(FEATURE_SELECTION, 'Cluster'):
             self.precluster_vectorizer = DictVectorizer(sparse=use_sparse) # Vectorizer without cluster features.
             self.clusterer = MiniBatchKMeans(n_clusters=15, init='k-means++')
-        if self.config.getboolean(FEATURE_SELECTION, 'Weather'):
+        if self.config.getboolean(FEATURE_SELECTION, 'DailyWeather') or \
+            self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather'):
             self.weather_data = Weather()
+
+        if util.VERBOSE:
+            print 'Feature Template List:'
+            for feature in self.config.options(FEATURE_SELECTION):
+                if self.config.getboolean(FEATURE_SELECTION, feature):
+                    print '\t%s' % feature
 
     def getFeatureVectors(self, X, is_test=False):
         """
@@ -39,7 +46,6 @@ class FeatureExtractor(object):
         # append the nearest centroid ID to each feature vector.
         if self.config.getboolean(FEATURE_SELECTION, 'Cluster'):
             self._appendClusterFeatures(feature_dicts, is_test)
-
         transformed = self.vectorizer.transform(feature_dicts) \
             if is_test \
             else self.vectorizer.fit_transform(feature_dicts)
@@ -87,17 +93,32 @@ class FeatureExtractor(object):
     def _extractCluster(self, x, feature_dict):
         feature_dict['Cluster'] = str(x['cluster_id'])
 
-    def _extractWeather(self, x, feature_dict):
+    def _extractDailyWeather(self, x, feature_dict):
         daily_weather = self.weather_data.getWeather(x['start_datetime'])
-        self._extractRainfall(daily_weather['PRCP'], feature_dict)
+        self._extractDailyRainfall(daily_weather['PRCP'], feature_dict)
 
-    def _extractRainfall(self, rainfall, feature_dict):
+    def _extractDailyRainfall(self, rainfall, feature_dict):
         if rainfall == 0:
-            feature_dict['Rainfall'] = 0
+            feature_dict['DailyRainfall'] = 0
         elif rainfall < 100:
-            feature_dict['Rainfall'] = 1
+            feature_dict['DailyRainfall'] = 1
         else:
-            feature_dict['Rainfall'] = 2
+            feature_dict['DailyRainfall'] = 2
+
+    def _extractHourlyWeather(self, x, feature_dict):
+        hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
+        self._extractHourlyRainfall(hourly_weather['PRCP'], feature_dict, True)
+
+    def _extractHourlyRainfall(self, rainfall, feature_dict, use_buckets=True):
+        if use_buckets:
+            if rainfall == 0:
+                feature_dict['HourlyRainfall'] = 'No Rainfall'
+            elif rainfall < 10:
+                feature_dict['HourlyRainfall'] = 'Less than 0.1 inches'
+            else:
+                feature_dict['HourlyRainfall'] = 'Greater than 0.1 inches'
+        else:
+            feature_dict['HourlyRainfall'] = rainfall
 
     def _appendClusterFeatures(self, feature_dicts, is_test):
         """
@@ -134,10 +155,13 @@ class FeatureExtractor(object):
             self._extractDayOfWeek(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_HourOfDay'):
             self._extractZoneHourOfDay(x, feature_dict)
-        if self.config.getboolean(FEATURE_SELECTION, 'Weather'):
-            self._extractWeather(x, feature_dict)
+        if self.config.getboolean(FEATURE_SELECTION, 'DailyWeather'):
+            self._extractDailyWeather(x, feature_dict)
+        if self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather'):
+            self._extractHourlyWeather(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_Hour'):
             self._extractZoneWeekendHour(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_Hour'):
             self._extractZoneDayHour(x, feature_dict)
+
         return feature_dict

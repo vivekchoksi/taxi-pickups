@@ -1,8 +1,6 @@
 #!/usr/bin/python
 import datetime
-
 from const import Const
-
 
 class Weather(object):
     '''
@@ -31,11 +29,11 @@ class Weather(object):
     weather = None
 
     def __init__(self):
-        # Load data set
-        self.weather = {}
-        f = open(Const.WEATHER_DATA)
-        headers = f.readline().strip().split(',')
-        lines = f.readlines()
+        # Load daily weather.
+        self.daily_weather = {}
+        f_daily = open(Const.DAILY_WEATHER_DATA)
+        headers = f_daily.readline().strip().split(',')
+        lines = f_daily.readlines()
         for line in lines:
             # Each line corresponds to weather data for one day.
             raw_values = line.strip().split(',')
@@ -45,9 +43,26 @@ class Weather(object):
             values = {}
             for index in xrange(3, len(headers)):
                 values[headers[index]] = int(raw_values[index])
-            self.weather[date] = values
+            self.daily_weather[date] = values
+        f_daily.close()
 
-    def getWeather(self, date):
+        # Load hourly weather.
+        self.hourly_weather = {}
+        f_hourly = open(Const.HOURLY_WEATHER_DATA)
+        f_hourly.readline() # First line contains headers.
+        lines = f_hourly.readlines()
+        for line in lines:
+            # Each line corresponds to weather data for one hour.
+            raw_values = line.strip().split(',')
+            date = datetime.datetime(int(raw_values[0]), # YEAR
+                                     int(raw_values[1]), # MONTH
+                                     int(raw_values[2]), # DAY
+                                     int(raw_values[3])) # HOUR
+            values = {'PRCP': int(raw_values[4])}  # Hundredths of an inch of precipitation.
+            self.hourly_weather[date] = values
+        f_hourly.close()
+
+    def getDailyWeather(self, date):
         '''
         Returns a dictionary with the weather values for the specified date.
 
@@ -55,4 +70,19 @@ class Weather(object):
         :return: dictionary whose keys are the types of recorded weather data
          available for this day.
         '''
-        return self.weather[datetime.datetime(date.year, date.month, date.day)]
+        return self.daily_weather[datetime.datetime(date.year, date.month, date.day)]
+
+    def getHourlyWeather(self, date):
+        '''
+        Returns a dictionary with the weather values for the specified date and hour.
+
+        :param date: datetime object with year, month, day, and hour attributes
+        :return: dictionary whose keys are the types of recorded weather data
+         available for this day.
+        '''
+        date_hour = datetime.datetime(date.year, date.month, date.day, date.hour)
+        if date_hour in self.hourly_weather:
+            hourly_weather = self.hourly_weather[datetime.datetime(date.year, date.month, date.day, date.hour)]
+        else:
+            hourly_weather = {'PRCP': 0}
+        return hourly_weather
