@@ -6,12 +6,12 @@ from sklearn import linear_model, svm, tree, grid_search
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.datasets import SupervisedDataSet
+from pybrain.structure.modules.tanhlayer import TanhLayer
 import util
 from time import time
 import numpy as np
 from const import Const
 from feature_extractor import FeatureExtractor
-
 
 # Interface for our learning models.
 class Model(object):
@@ -162,8 +162,7 @@ class NeuralNetworkRegressor:
     """
 
     def __init__(self):
-        # TODO(figure out ballpark number of hidden layers, and how large to make them.
-        self.nnw = buildNetwork(100, 100, 1)
+        pass
 
     def fit(self, X, y):
         '''
@@ -172,18 +171,30 @@ class NeuralNetworkRegressor:
         :param X: list of numpy arrays representing the training samples.
         :param y: numpy array representing the training samples' true values.
         '''
-        num_x_dimensions = len(X[0])
-        num_y_dimensions = 1
+        input_dimension = len(X[0])
+
+        # TODO figure out ballpark number of hidden layers, and how large to make them.
+        self.nnw = buildNetwork(input_dimension, 1, hiddenclass=TanhLayer)
+
         if util.VERBOSE:
-            print 'Generating neural network data set: using %d x dimensions' % num_x_dimensions
-        data_set = SupervisedDataSet(num_x_dimensions, num_y_dimensions)
+            print 'Generating neural network data set: using input dimension of %d' % input_dimension
+
+        # Create a data set for training samples with input_demnsion number of features, and outputs with dimension 1.
+        data_set = SupervisedDataSet(input_dimension, 1)
         for i in xrange(len(y)):
-            data_set.addSample(X[i], y[i])
+            data_set.appendLinked(X[i], np.array(y[i]))
+
         if util.VERBOSE:
             print 'Finished generating neural network data set.'
             print 'Starting to train neural network.'
-        self.trainer = BackpropTrainer(self.nnw, data_set)
-        self.trainer.trainUntilConvergence()
+
+        # Train the neural network with backpropagation on the data set.
+        self.trainer = BackpropTrainer(self.nnw, dataset=data_set)
+
+        for i in xrange(3):
+            error = self.trainer.train() #UntilConvergence()
+            print 'Iteration: %d\tError: %f' % (i, error)
+
         if util.VERBOSE:
             print 'Finished training neural network.'
 
@@ -191,10 +202,10 @@ class NeuralNetworkRegressor:
         '''
         Predicts the output for sample x.
 
-        :param x: array defining one sample.
+        :param x: an array of one element, which is a numpy array defining one sample.
         :return array(y), where array is a numpy array
         '''
-        return self.nnw.activate(x)
+        return self.nnw.activate(x[0])
 
 class AutoTunedRegressionModel(RegressionModel):
     __metaclass__ = ABCMeta
