@@ -168,10 +168,11 @@ class Dataset(object):
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
 
-    def __init__(self, model, dataset, plot_error):
+    def __init__(self, model, dataset, plot_error, print_feature_weights):
         self.model = model
         self.dataset = dataset
         self.plot_error = plot_error
+        self.print_feature_weights = print_feature_weights
 
     def evaluate(self):
         '''
@@ -189,6 +190,10 @@ class Evaluator(object):
             for test_example in test_examples:
                 predicted_num_pickups.append(self.model.predict(test_example))
                 true_num_pickups.append(test_example['num_pickups'])
+
+        # Print the feature weights specific to several zones.
+        if self.print_feature_weights:
+            self._printFeatureWeights()
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -227,6 +232,7 @@ class Evaluator(object):
         # Compute and print coefficient of determination R^2.
         m = metrics.r2_score(true_num_pickups, predicted_num_pickups)
         print 'R^2 Score: %f' % m
+        print
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
@@ -244,6 +250,14 @@ class Evaluator(object):
         for i in random_indices:
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
+
+    def _printFeatureWeights(self):
+        # Make sure model has method to print feature weights.
+        printFeatureWeights = getattr(self.model, 'printFeatureWeights', None)
+        if callable(printFeatureWeights):
+            printFeatureWeights(zone_id=15102) # Popping, hopping zone
+        else:
+            print 'Cannot print feature weights for this model.'
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
@@ -331,6 +345,9 @@ def getOptions():
     parser.add_option('-l', '--local',
                       action='store_true', dest='local', default=False,
                       help='use mysql db instance running locally')
+    parser.add_option('-f', '--feature_weights',
+                      action='store_true', dest='feature_weights', default=False,
+                      help='print feature weights for two zones (a high activity and a low activity zone)')
     options, args = parser.parse_args()
 
     if not options.model:
@@ -352,7 +369,7 @@ def main():
 
     # Instantiate the specified learning model.
     model = getModel(options.model, database, dataset)
-    evaluator = Evaluator(model, dataset, options.plot_error)
+    evaluator = Evaluator(model, dataset, options.plot_error, options.feature_weights)
 
     # Train the model.
     util.verbosePrint('\nTRAINING', model, '...')
