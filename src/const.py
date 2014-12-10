@@ -5,6 +5,7 @@ class Const(object):
     WEATHER_DATA = '../data/nyc_observed_weather.csv'
     TRIP_DATA = 'trip_data'
     TRAIN_BATCH_SIZE = 40000
+    TEST_BATCH_SIZE = 40000
 
     # Number of rows in January aggregated pickups table.
     DATASET_SIZE = 349680
