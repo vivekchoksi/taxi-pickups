@@ -142,7 +142,7 @@ class RegressionModel(Model):
             'is installed on the corn machines.'
         tree.export_graphviz(self.regressor, out_file=out_file_dot)
 
-class NueralNetworkRegressionModel(RegressionModel):
+class NueralNetworkRegression(RegressionModel):
     __metaclass__ = ABCMeta
 
     """
@@ -154,7 +154,6 @@ class NueralNetworkRegressionModel(RegressionModel):
 
     def __str__(self):
         return 'neural network [neural network model]'
-
 
 class NeuralNetworkRegressor:
     """
@@ -175,11 +174,18 @@ class NeuralNetworkRegressor:
         '''
         num_x_dimensions = len(X[0])
         num_y_dimensions = 1
+        if util.VERBOSE:
+            print 'Generating neural network data set: using %d x dimensions' % num_x_dimensions
         data_set = SupervisedDataSet(num_x_dimensions, num_y_dimensions)
         for i in xrange(len(y)):
             data_set.addSample(X[i], y[i])
+        if util.VERBOSE:
+            print 'Finished generating neural network data set.'
+            print 'Starting to train neural network.'
         self.trainer = BackpropTrainer(self.nnw, data_set)
         self.trainer.trainUntilConvergence()
+        if util.VERBOSE:
+            print 'Finished training neural network.'
 
     def predict(self, x):
         '''

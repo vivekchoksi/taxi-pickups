@@ -274,6 +274,8 @@ def getModel(model_name, database, dataset):
         return SupportVectorRegression(database, dataset)
     elif lower_name == 'dtr':
         return DecisionTreeRegression(database, dataset)
+    elif lower_name == 'nnr':
+        return NueralNetworkRegression(database, dataset)
     elif lower_name == 'autolinear':
         return AutoTunedLinearRegression(database, dataset)
     elif lower_name == 'autodtr':
