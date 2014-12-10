@@ -248,7 +248,7 @@ class AutoTunedLinearRegression(AutoTunedRegressionModel):
             'power_t': [0.05, 0.1, 0.2]
         }
         sgd_regressor = linear_model.SGDRegressor()
-        cv = util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft)
+        cv = util.getCrossValidator(1, 0.9, dataset.trainingExamplesLeft)
         AutoTunedRegressionModel.__init__(self, database, dataset, sgd_regressor, params, cv=cv)
 
     def __str__(self):
