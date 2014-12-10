@@ -12,9 +12,13 @@
 # cwd means current directory.
 #$ -cwd
 
+echo ${args}
+
 # Install MySQLdb dependency.
 pip install --user MySQL-python==1.2.5
 
+pip install --user pybrain
+
 # CONFIGURE THIS TO BE THE COMMAND YOU WANT TO RUN.
-time python taxi_pickups.py -m autolinear -v
+time python taxi_pickups.py ${args}
 
