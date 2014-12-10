@@ -8,7 +8,7 @@
 #$ -j y
 
 # Mail to this address.
-#$ -M vhchoksi@stanford.edu
+#$ -M jgrinber@stanford.edu
 # Send mail on beginning, ending, or suspension of job.
 #$ -m bes
 

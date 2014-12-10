@@ -174,7 +174,7 @@ class NeuralNetworkRegressor:
         input_dimension = len(X[0])
 
         # TODO figure out ballpark number of hidden layers, and how large to make them.
-        self.nnw = buildNetwork(input_dimension, 1, hiddenclass=TanhLayer)
+        self.nnw = buildNetwork(input_dimension, 100, 1, hiddenclass=TanhLayer)
 
         if util.VERBOSE:
             print 'Generating neural network data set: using input dimension of %d' % input_dimension
