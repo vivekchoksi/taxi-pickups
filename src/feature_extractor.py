@@ -3,7 +3,7 @@ import ConfigParser
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.cluster import MiniBatchKMeans
 from weather import Weather
-
+import util
 
 FEATURE_SELECTION = 'FeatureSelection'
 
@@ -19,6 +19,12 @@ class FeatureExtractor(object):
             self.clusterer = MiniBatchKMeans(n_clusters=15, init='k-means++')
         if self.config.getboolean(FEATURE_SELECTION, 'Weather'):
             self.weather_data = Weather()
+
+        if util.VERBOSE:
+            print 'Feature Template List:'
+            for feature in self.config.options(FEATURE_SELECTION):
+                if self.config.getboolean(FEATURE_SELECTION, feature):
+                    print '\t%s' % feature
 
     def getFeatureVectors(self, X, is_test=False):
         """
