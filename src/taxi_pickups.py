@@ -14,7 +14,14 @@ from models import *
 class Database(object):
 
     def __init__(self, is_local):
-        if is_local:
+        self.is_local = is_local
+        self._connect()
+
+    def _connect(self):
+        '''
+        Connect to the MySQL database.
+        '''
+        if self.is_local:
             self.db = MySQLdb.connect(
                 host='localhost',
                 user='root',
@@ -37,8 +44,16 @@ class Database(object):
             names to values. Column names will be what you name columns in case 
             of derived columns such as avg() (using the 'as' keyword in sql)
         '''
-        cursor = self.db.cursor()
-        cursor.execute(query_string)
+        cursor = None
+        try:
+            cursor = self.db.cursor()
+            cursor.execute(query_string)
+        except (AttributeError, MySQLdb.OperationalError):
+            # Reconnect to the database if necessary.
+            self._connect()
+            cursor = self.db.cursor()
+            cursor.execute(query_string)
+
         self.db.commit()
         if fetch_all:
             tuple_results = cursor.fetchall()
