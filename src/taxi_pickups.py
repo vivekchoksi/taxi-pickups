@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import MySQLdb
 from models import *
-
+import datetime
 
 class Database(object):
 
@@ -193,7 +193,9 @@ class Evaluator(object):
 
         # Print the feature weights specific to a zone.
         if self.print_feature_weights:
-            self._printFeatureWeights(15102)
+            start_datetime = datetime.datetime(2013, 1, 20)
+            duration = datetime.timedelta(days=7)
+            self._plotFeatureWeights(15504, start_datetime, duration)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -251,13 +253,6 @@ class Evaluator(object):
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
-    def _printFeatureWeights(self, zone_id):
-        # Make sure model has method to print feature weights.
-        if callable(getattr(self.model, 'printFeatureWeights', None)):
-            self.model.printFeatureWeights(zone_id=zone_id) # A popping, hopping zone
-        else:
-            print 'Cannot print feature weights for this model.'
-
     def _plotFeatureWeights(self, zone_id, start_datetime, duration):
         '''
         :param zone_id: only use features relevant to this zone.
@@ -271,7 +266,10 @@ class Evaluator(object):
             print '\tCannot plot features for the model.'
             return
         else:
-            print 'Plotting features and their weights.\n'
+            print 'Plotting features and their weights for each hour.'
+            print 'Start time: %s' % str(start_datetime)
+            print 'Duration: %s' % str(duration)
+            print
 
         # Mapping from all features to their corresponding weights.
         #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
@@ -279,9 +277,11 @@ class Evaluator(object):
 
         # For each data point in the time range, get the weight for each of its features.
         test_weights = []
+        feature_templates = set()
 
         end_datetime = start_datetime + duration
         curr_datetime = start_datetime
+        timedelta = datetime.timedelta(hours=1)
         while curr_datetime < end_datetime:
             test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
 
@@ -294,16 +294,30 @@ class Evaluator(object):
             test_example_features = self.model.feature_extractor.getFeatureDict(test_example)
 
             for feature_template, identifier in test_example_features.iteritems():
+                feature_templates.add(feature_template)
                 feature_name = '%s=%s' % (feature_template, identifier)
-                test_example_weights[feature_template] = feature_weights[feature_name]
+                if feature_name in feature_weights:
+                    test_example_weights[feature_template] = feature_weights[feature_name]
 
             test_weights.append(test_example_weights)
-            curr_datetime += duration
+            curr_datetime += timedelta
 
         # Generate stacked bar chart, whose series are the feature templates.
-        print test_weights
+        for feature_template in feature_templates:
+            print '%s,' % feature_template,
+        print
+
+        for test_example_weights in test_weights:
+            for feature_template in feature_templates:
+                if feature_template in test_example_weights:
+                    print '%s,' % test_example_weights[feature_template],
+                else:
+                    print ',',
+            print
+        print
+
         # TODO generate chart from test_weights
-        
+
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         '''
         Generates a scatter plot. The true number of pickups is plotted against the prediction error for

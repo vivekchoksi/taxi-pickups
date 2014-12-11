@@ -110,7 +110,8 @@ class RegressionModel(Model):
         :param n: prints this many of the best/worst features (prints 2n features total).
             If n is None, prints all features.
         '''
-        feature_weights = self.getFeatureWeights()
+        feature_weights_dict = self.getFeatureWeights()
+        feature_weights = [(feature_name, weight) for feature_name, weight in feature_weights_dict.iteritems()]
         feature_weights.sort(key=operator.itemgetter(1))
 
         def printFeatureWeight(feature_weight):
@@ -137,15 +138,13 @@ class RegressionModel(Model):
         :return dictionary mapping feature names to weights.
         '''
         if not hasattr(self.regressor, 'coef_'):
-            print '\tCannot print out feature weights for the model.'
+            print '\tCannot get feature weights for the model.'
             return
-        else:
-            print 'Printing features and their weights.\n'
 
-        feature_weights = []
+        feature_weights = {}
         for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
             if zone_id is None or str(zone_id) in feature_name:
-                feature_weights.append((feature_name, self.regressor.coef_[index]))
+                feature_weights[feature_name] = self.regressor.coef_[index]
         return feature_weights
 
     def _exportToDotfile(self):
