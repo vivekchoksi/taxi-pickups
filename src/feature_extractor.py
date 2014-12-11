@@ -18,14 +18,18 @@ class FeatureExtractor(object):
             self.precluster_vectorizer = DictVectorizer(sparse=use_sparse) # Vectorizer without cluster features.
             self.clusterer = MiniBatchKMeans(n_clusters=15, init='k-means++')
         if self.config.getboolean(FEATURE_SELECTION, 'DailyWeather') or \
-            self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather'):
+            self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather') or \
+            self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_HourlyWeather'):
             self.weather_data = Weather()
 
         if util.VERBOSE:
-            print 'Feature Template List:'
-            for feature in self.config.options(FEATURE_SELECTION):
-                if self.config.getboolean(FEATURE_SELECTION, feature):
-                    print '\t%s' % feature
+            self.printFeatureList()
+
+    def printFeatureList(self):
+        print 'Feature Template List:'
+        for feature in self.config.options(FEATURE_SELECTION):
+            if self.config.getboolean(FEATURE_SELECTION, feature):
+                print '\t%s' % feature
 
     def getFeatureVectors(self, X, is_test=False):
         """
@@ -65,26 +69,33 @@ class FeatureExtractor(object):
         feature_dict['Zone'] = str(x['zone_id'])
 
     def _extractHourOfDay(self, x, feature_dict):
-        feature_dict['HourOfDay'] = str(x['start_datetime'].hour)
+        feature_dict['HourOfDay'] = '%02d' % x['start_datetime'].hour # Pad hours < 10 with a leading zero.
 
     def _extractDayOfWeek(self, x, feature_dict):
-        feature_dict['DayOfWeek'] = str(x['start_datetime'].weekday())
+        feature_dict['DayOfWeek'] = '%02d' % x['start_datetime'].weekday() # Pad day of week with a leading zero.
 
     def _extractZoneHourOfDay(self, x, feature_dict):
-        feature_dict['Zone_HourOfDay'] = str(x['zone_id']) + '_' + str(x['start_datetime'].hour)
+        feature_dict['Zone_HourOfDay'] = '%d_%02d' % (x['zone_id'], x['start_datetime'].hour)
 
     # Concatenates the zone, whether the taxi ride is on a weekend, and the hour
     # of day.
     def _extractZoneWeekendHour(self, x, feature_dict):
-        feature_dict['Zone_IsWeekend_Hour'] = str(x['zone_id']) + '_' + \
-                                          str(self._isWeekend(x['start_datetime'])) + '_' + \
-                                          str(x['start_datetime'].hour)
+        feature_dict['Zone_IsWeekend_Hour'] = '%d_%s_%02d' % (x['zone_id'],
+                                                              str(self._isWeekend(x['start_datetime'])),
+                                                              x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
 
     # Concatenates the zone, day of week, and hour of day.
     def _extractZoneDayHour(self, x, feature_dict):
-        feature_dict['Zone_DayOfWeek_Hour'] = str(x['zone_id']) + '_' + \
-                                          str(x['start_datetime'].weekday()) + '_' + \
-                                          str(x['start_datetime'].hour)
+        feature_dict['Zone_DayOfWeek_Hour'] = '%d_%02d_%02d' % (x['zone_id'],
+                                                                x['start_datetime'].weekday(), # Pad day of week with a leading zero.
+                                                                x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
+
+    def _extractZoneWeekendHourlyWeather(self, x, feature_dict):
+        hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
+        rainfallValue = self._getHourlyRainfallValue(hourly_weather['PRCP'], True)
+        feature_dict['Zone_IsWeekend_HourlyRainfall'] = '%d_%s_%s' % (x['zone_id'],
+                                                                str(self._isWeekend(x['start_datetime'])),
+                                                                rainfallValue)
 
     def _isWeekend(self, date):
         # Weekday = 0 for Monday.
@@ -95,30 +106,30 @@ class FeatureExtractor(object):
 
     def _extractDailyWeather(self, x, feature_dict):
         daily_weather = self.weather_data.getWeather(x['start_datetime'])
-        self._extractDailyRainfall(daily_weather['PRCP'], feature_dict)
+        feature_dict['DailyRainfall'] = self._getDailyRainfallValue(daily_weather['PRCP'])
 
-    def _extractDailyRainfall(self, rainfall, feature_dict):
+    def _getDailyRainfallValue(self, rainfall):
         if rainfall == 0:
-            feature_dict['DailyRainfall'] = 0
+            return 'No Rainfall'
         elif rainfall < 100:
-            feature_dict['DailyRainfall'] = 1
+            return 'Less than 1 inch'
         else:
-            feature_dict['DailyRainfall'] = 2
+            return 'Greater than 1 inch'
 
     def _extractHourlyWeather(self, x, feature_dict):
         hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
-        self._extractHourlyRainfall(hourly_weather['PRCP'], feature_dict, True)
+        feature_dict['HourlyRainfall'] = self._getHourlyRainfallValue(hourly_weather['PRCP'], True)
 
-    def _extractHourlyRainfall(self, rainfall, feature_dict, use_buckets=True):
+    def _getHourlyRainfallValue(self, rainfall, use_buckets=True):
         if use_buckets:
             if rainfall == 0:
-                feature_dict['HourlyRainfall'] = 'No Rainfall'
+                return 'No Rainfall'
             elif rainfall < 10:
-                feature_dict['HourlyRainfall'] = 'Less than 0.1 inches'
+                return 'Less than 0.1 inches'
             else:
-                feature_dict['HourlyRainfall'] = 'Greater than 0.1 inches'
+                return 'Greater than 0.1 inches'
         else:
-            feature_dict['HourlyRainfall'] = rainfall
+            return rainfall
 
     def _appendClusterFeatures(self, feature_dicts, is_test):
         """
@@ -163,5 +174,7 @@ class FeatureExtractor(object):
             self._extractZoneWeekendHour(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_Hour'):
             self._extractZoneDayHour(x, feature_dict)
+        if self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_HourlyWeather'):
+            self._extractZoneWeekendHourlyWeather(x, feature_dict)
 
         return feature_dict
