@@ -23,13 +23,17 @@ class FeatureExtractor(object):
             self.weather_data = Weather()
 
         if util.VERBOSE:
-            self.printFeatureList()
+            feature_list = self.getFeatureList()
+            print 'Feature Template List:'
+            for feature in feature_list:
+                print '\t%s' % feature
 
-    def printFeatureList(self):
-        print 'Feature Template List:'
+    def getFeatureList(self):
+        feature_list = []
         for feature in self.config.options(FEATURE_SELECTION):
             if self.config.getboolean(FEATURE_SELECTION, feature):
-                print '\t%s' % feature
+                feature_list.append(feature)
+        return feature_list
 
     def getFeatureVectors(self, X, is_test=False):
         """

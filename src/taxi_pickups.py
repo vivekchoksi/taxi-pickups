@@ -194,8 +194,7 @@ class Evaluator(object):
         # Print the feature weights specific to a zone.
         if self.print_feature_weights:
             start_datetime = datetime.datetime(2013, 1, 20)
-            duration = datetime.timedelta(days=7)
-            self._plotFeatureWeights(15504, start_datetime, duration)
+            self._plotFeatureWeights(15504, start_datetime)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -253,11 +252,11 @@ class Evaluator(object):
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
-    def _plotFeatureWeights(self, zone_id, start_datetime, duration):
+    def _plotFeatureWeights(self, zone_id, start_datetime, num_hours=7*24):
         '''
         :param zone_id: only use features relevant to this zone.
         :param start_datetime: datetime at which to start extracting features.
-        :param duration: timedelta length of time.
+        :param num_hours: number of hours to plot
 
         Generates a stacked bar chart of all the features weights used to predict the number of pickups in zone zone_id
         for each hour of the week (from Sunday 12am to Saturday 11pm).
@@ -268,7 +267,7 @@ class Evaluator(object):
         else:
             print 'Plotting features and their weights for each hour.'
             print 'Start time: %s' % str(start_datetime)
-            print 'Duration: %s' % str(duration)
+            print 'Duration : %s hours' % str(num_hours)
             print
 
         # Mapping from all features to their corresponding weights.
@@ -276,47 +275,86 @@ class Evaluator(object):
         feature_weights = self.model.getFeatureWeights()
 
         # For each data point in the time range, get the weight for each of its features.
-        test_weights = []
-        feature_templates = set()
+        # plot_values is a mapping from feature templates to a list of all their values at each time step.
+        #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
+        plot_values = {}
 
-        end_datetime = start_datetime + duration
-        curr_datetime = start_datetime
-        timedelta = datetime.timedelta(hours=1)
-        while curr_datetime < end_datetime:
+        for time_step in xrange(num_hours):
+            curr_datetime = start_datetime + datetime.timedelta(hours=time_step)
             test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
 
-            # Mapping from feature templates to the corresponding feature's weight for this test example.
-            #   EX: test_example_weights['Zone_HourOfDay'] = 324.4565
-            test_example_weights = {}
-
-            # Mapping from feature templates to their identifiers
+            # test_example_features is a mapping from feature templates to their identifiers
             #   EX: test_example_features['Zone_HourOfDay'] = 15402_14
             test_example_features = self.model.feature_extractor.getFeatureDict(test_example)
 
             for feature_template, identifier in test_example_features.iteritems():
-                feature_templates.add(feature_template)
+                if feature_template not in plot_values:
+                    plot_values[feature_template] = [0] * num_hours
                 feature_name = '%s=%s' % (feature_template, identifier)
                 if feature_name in feature_weights:
-                    test_example_weights[feature_template] = feature_weights[feature_name]
-
-            test_weights.append(test_example_weights)
-            curr_datetime += timedelta
+                    plot_values[feature_template][time_step] = feature_weights[feature_name]
 
         # Generate stacked bar chart, whose series are the feature templates.
-        for feature_template in feature_templates:
+        for feature_template in plot_values.keys():
             print '%s,' % feature_template,
         print
 
-        for test_example_weights in test_weights:
-            for feature_template in feature_templates:
-                if feature_template in test_example_weights:
-                    print '%s,' % test_example_weights[feature_template],
-                else:
-                    print ',',
+        for time_step in xrange(num_hours):
+            for feature_template in plot_values.keys():
+                print '%s,' % plot_values[feature_template][time_step],
             print
         print
 
-        # TODO generate chart from test_weights
+        # Order these feature templates first, then all the remaining feature templates in plot_values in any order.
+        feature_templates = ['Zone', 'DayOfWeek', 'HourOfDay', 'Zone_DayOfWeek', 'Zone_HourOfDay']
+        for feature_template in list(feature_templates):
+            if feature_template not in plot_values.keys():
+                feature_templates.remove(feature_template)
+        for feature_template in plot_values.keys():
+            if feature_template not in feature_templates:
+                feature_templates.append(feature_template)
+
+        colors = 'bgrcmy'
+        indices = [i for i in xrange(num_hours)]
+        series_index = 0
+        width = 1
+        bars = []
+        # Plot positive values for all series.
+        bottom_values = [0] * num_hours
+        for feature_template in feature_templates:
+            pos_values = [max(0, weight) for weight in plot_values[feature_template]]
+            bar = plt.bar(indices, pos_values,
+                    color=colors[series_index % len(colors)],
+                    width=width,
+                    alpha=0.8,
+                    bottom=bottom_values)
+            bars.append(bar[0])
+            new_bottom_values = [bottom_values[i] + pos_values[i] for i in xrange(num_hours)]
+            bottom_values = new_bottom_values
+            series_index += 1
+
+        # Plot negative values for all series.
+        bottom_values = [0] * num_hours
+        for feature_template in feature_templates:
+            neg_values = [min(0, weight) for weight in plot_values[feature_template]]
+            plt.bar(indices, neg_values,
+                    color=colors[series_index % len(colors)],
+                    width=width,
+                    alpha=0.8,
+                    bottom=[i for i in bottom_values])
+            new_bottom_values = [bottom_values[i] + neg_values[i] for i in xrange(num_hours)]
+            bottom_values = new_bottom_values
+            series_index += 1
+
+        # Decorate plot.
+        plt.grid(True)
+        plt.title('Predicted Number of Pickups in Zone %d' % zone_id)
+        plt.xlabel('Time')
+        plt.ylabel('Number of Pickups')
+        plt.xlim(0, num_hours)
+        plt.grid(True)
+        plt.legend(bars, feature_templates)
+        plt.show()
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         '''
