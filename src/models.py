@@ -111,6 +111,9 @@ class RegressionModel(Model):
             If n is None, prints all features.
         '''
         feature_weights_dict = self.getFeatureWeights()
+        if feature_weights_dict is None:
+            return
+
         feature_weights = [(feature_name, weight) for feature_name, weight in feature_weights_dict.iteritems()]
         feature_weights.sort(key=operator.itemgetter(1))
 
@@ -168,8 +171,8 @@ class NueralNetworkRegression(RegressionModel):
     """
     Neural network regression model using the PyBrain library.
     """
-    def __init__(self, database, dataset):
-        nnr = NeuralNetworkRegressor()
+    def __init__(self, database, dataset, hidden_layer_multiplier):
+        nnr = NeuralNetworkRegressor(hidden_layer_multiplier)
         RegressionModel.__init__(self, database, dataset, nnr, sparse=False)
 
     def __str__(self):
@@ -181,8 +184,8 @@ class NeuralNetworkRegressor:
     similar to the interface for sklearn's regressors.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, hidden_layer_mutliplier):
+        self.hidden_layer_multiplier = hidden_layer_mutliplier
 
     def fit(self, X, y):
         '''
@@ -192,12 +195,12 @@ class NeuralNetworkRegressor:
         :param y: numpy array representing the training samples' true values.
         '''
         input_dimension = len(X[0])
-
-        # TODO figure out ballpark number of hidden layers, and how large to make them.
-        self.nnw = buildNetwork(input_dimension, 1, hiddenclass=TanhLayer)
+        self.nnw = buildNetwork(input_dimension, input_dimension * self.hidden_layer_multiplier, 1)
 
         if util.VERBOSE:
-            print 'Generating neural network data set: using input dimension of %d' % input_dimension
+            print 'Generating neural network data set:'
+            print '\tInput layer dimension: %d' % input_dimension
+            print '\tHidden layer dimension: %d ' % (input_dimension * self.hidden_layer_multiplier)
 
         # Create a data set for training samples with input_demnsion number of features, and outputs with dimension 1.
         data_set = SupervisedDataSet(input_dimension, 1)
