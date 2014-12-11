@@ -419,6 +419,7 @@ class Evaluator(object):
         plt.title('Histogram of the number of taxi pickups')
         plt.xlabel('Number of taxi pickups in any zone and hour-long time slot')
         plt.ylabel('Frequency')
+        plt.grid(True)
 
         plt.savefig('../outfiles/true_vs_predicted_histogram_%s.png' % (util.currentTimeString()), bbox_inches='tight')
         plt.close()

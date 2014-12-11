@@ -148,8 +148,8 @@ def main():
     cv = util.getCrossValidator(options.num_iter, options.train_fraction, 
         options.num_examples)
     plotLearningCurve(model, title, X, y, ylim=(0.5, 1.01), cv=cv, n_jobs=4)
-    plt.show()
-
+    plt.savefig('../outfiles/learning_curve_%s.png' % (util.currentTimeString()), bbox_inches='tight')
+    plt.close()
 
 if __name__ == '__main__':
     main()
