@@ -435,6 +435,8 @@ def getOptions():
     parser = OptionParser()
     parser.add_option('-m', '--model', dest='model',
                       help='write report to MODEL', metavar='MODEL')
+    parser.add_option('--features', dest='features_file',
+                      help='name of the features config file; e.g. features1.cfg')
     parser.add_option('-v', '--verbose',
                       action='store_true', dest='verbose', default=False,
                       help='print verbose output')
@@ -452,10 +454,16 @@ def getOptions():
                       help='print feature weights for two zones (a high activity and a low activity zone)')
     options, args = parser.parse_args()
 
-    if not options.model:
-        print 'Usage: \tpython taxi_pickups.py -m <model-name>'
+    if not options.model or not options.features_file:
+        print 'Usage: \tpython taxi_pickups.py -m <model-name> --features <features-filename.cfg>'
         print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
+
+    if os.path.splitext(options.features_file)[1] != '.cfg' or not os.path.isfile(options.features_file):
+        print 'Invalid feature file name. Must be a valid .cfg file.'
+        print '\nTo see more options, run python taxi_pickups.py --help'
+        exit(1)
+
 
     if options.verbose:
         util.VERBOSE = True
@@ -468,6 +476,8 @@ def main():
     database = Database(options.local)
     dataset = Dataset(0.7, options.num_examples, database, Const.AGGREGATED_PICKUPS)
     util.verbosePrint(dataset)
+
+    util.FEATURES_FILE = options.features_file
 
     # Instantiate the specified learning model.
     model = getModel(options.model, database, dataset)
