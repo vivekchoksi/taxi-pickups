@@ -321,7 +321,8 @@ class DecisionTreeRegression(RegressionModel):
         # of over / under-fitting. Intuitively, these parameters should
         # depend on the train set size. TODO: Tune these parameters.
         dt_regressor = tree.DecisionTreeRegressor(
-            max_depth=50,
+            max_features=0.9,
+            max_depth=100,
             min_samples_leaf=2
         )
         RegressionModel.__init__(self, database, dataset, dt_regressor, sparse=False)
