@@ -142,7 +142,7 @@ class RegressionModel(Model):
         '''
         if not hasattr(self.regressor, 'coef_'):
             print '\tCannot get feature weights for the model.'
-            return
+            return None
 
         feature_weights = {}
         for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
@@ -299,6 +299,21 @@ class SupportVectorRegression(RegressionModel):
     def __str__(self):
         return 'svr [support vector regression model]'
 
+class AutoTunedSVR(AutoTunedRegressionModel):
+
+    def __init__(self, database, dataset):
+        params = {
+            'C': [1000, 10000, 100000, 1000000, 10000000],
+            'epsilon': [0.01, 0.1, 1, 10],
+            'kernel': ['linear', 'rbf', 'poly', 'sigmoid']
+        }
+        regressor = svm.SVR()
+        cv = util.getCrossValidator(1, 0.9, dataset.trainingExamplesLeft)
+        AutoTunedRegressionModel.__init__(self, database, dataset, regressor, params, cv=cv)
+
+    def __str__(self):
+        return 'autosvr [auto tuned support vector regression model]'
+
 class DecisionTreeRegression(RegressionModel):
     def __init__(self, database, dataset):
         # NOTE: The decision tree is very sensitive to max_depth and
@@ -323,7 +338,7 @@ class AutoTunedDecisionTree(AutoTunedRegressionModel):
             'min_samples_leaf': [2, 5, 10]
         }
         dt_regressor = tree.DecisionTreeRegressor()
-        cv = util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft)
+        cv = util.getCrossValidator(1, 0.9, dataset.trainingExamplesLeft)
         AutoTunedRegressionModel.__init__(self, database, dataset, dt_regressor, params, cv=cv, sparse=False)
 
     def __str__(self):
