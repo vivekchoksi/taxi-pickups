@@ -72,7 +72,7 @@ class FeatureExtractor(object):
         feature_dict['HourOfDay'] = '%02d' % x['start_datetime'].hour # Pad hours < 10 with a leading zero.
 
     def _extractDayOfWeek(self, x, feature_dict):
-        feature_dict['DayOfWeek'] = str(x['start_datetime'].weekday())
+        feature_dict['DayOfWeek'] = '%02d' % x['start_datetime'].weekday() # Pad day of week with a leading zero.
 
     def _extractZoneHourOfDay(self, x, feature_dict):
         feature_dict['Zone_HourOfDay'] = '%d_%02d' % (x['zone_id'], x['start_datetime'].hour)
@@ -86,9 +86,9 @@ class FeatureExtractor(object):
 
     # Concatenates the zone, day of week, and hour of day.
     def _extractZoneDayHour(self, x, feature_dict):
-        feature_dict['Zone_DayOfWeek_Hour'] = '%d_%s_%02d' % (x['zone_id'],
-                                                              str(x['start_datetime'].weekday()),
-                                                              x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
+        feature_dict['Zone_DayOfWeek_Hour'] = '%d_%02d_%02d' % (x['zone_id'],
+                                                                x['start_datetime'].weekday(), # Pad day of week with a leading zero.
+                                                                x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
 
     def _extractZoneWeekendHourlyWeather(self, x, feature_dict):
         hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
