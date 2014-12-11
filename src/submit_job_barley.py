@@ -23,6 +23,6 @@ args = ' '.join(sys.argv[1:])
 #   mem_free=1G ... request 1 GB per core
 #   -pe shm 4 ... request 4 cores
 # os.system('qsub -l mem_free=2G -pe shm 4 -N taxi_pickups_linear run_taxi_pickups.sh')
-os.system("qsub -v args='%s' -l mem_free=4G -pe shm 4 -N taxi_pickups_linear " \
+os.system("qsub -v args='%s' -l mem_free=1G -pe shm 4 -N taxi_pickups_linear " \
     "run_taxi_pickups_barley.sh" % args)
 
