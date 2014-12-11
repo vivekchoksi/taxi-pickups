@@ -60,3 +60,6 @@ src/*.dot
 # barley job output files
 *.o*
 *.po*
+
+# ignore files inside outfiles
+outfiles/*
