@@ -5,6 +5,9 @@ os.environ['MPLCONFIGDIR'] = "../"
 import random
 from math import sqrt
 from optparse import OptionParser
+import matplotlib
+matplotlib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
+                        # Important! Execute this command *BEFORE* we import matplotlib.pyplot.
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import MySQLdb
