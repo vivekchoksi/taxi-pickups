@@ -425,6 +425,8 @@ def getModel(model_name, database, dataset):
         return AutoTunedLinearRegression(database, dataset)
     elif lower_name == 'autodtr':
         return AutoTunedDecisionTree(database, dataset)
+    elif lower_name == 'autosvr':
+        return AutoTunedSVR(database, dataset)
     raise Exception('No model with name %s' % model_name)
 
 def getOptions():
