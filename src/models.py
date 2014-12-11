@@ -79,7 +79,7 @@ class RegressionModel(Model):
 
         if util.VERBOSE:
             self._printMemoryStats(row_dicts, X)
-            self._printMostPredictiveFeatures(15)
+            self._printFeatureWeights(n=15)
             if isinstance(self.regressor, tree.DecisionTreeRegressor):
                 self._exportToDotfile()
 
@@ -103,29 +103,49 @@ class RegressionModel(Model):
         else:
             print '\tVectorized training data: \t', sys.getsizeof(X), " bytes used\n"
 
-    def _printMostPredictiveFeatures(self, n):
+    def _printFeatureWeights(self, n=None):
         '''
-        If the input model has feature coefficients, prints the n features whose
-        coefficients are the highest, and the n features whose coefficients are
-        the lowest.
+        Prints the model's features and their corresponding weights, if the model has feature coefficients.
 
-        :param n: number of the best/worst features to print (prints 2n features total)
+        :param n: prints this many of the best/worst features (prints 2n features total).
+            If n is None, prints all features.
         '''
-        if not hasattr(self.regressor, 'coef_'):
-            print '\tCannot print out the most predictive features for the model.'
-            return
-
-        feature_weights = []
-        for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
-            feature_weights.append((feature_name, self.regressor.coef_[index]))
+        feature_weights_dict = self.getFeatureWeights()
+        feature_weights = [(feature_name, weight) for feature_name, weight in feature_weights_dict.iteritems()]
         feature_weights.sort(key=operator.itemgetter(1))
 
         def printFeatureWeight(feature_weight):
-            print '\t%s:\t%f' % (feature_weight[0], feature_weight[1])
+            print '%s\t%f' % (feature_weight[0], feature_weight[1])
 
-        print ('\tFeature\t\tWeight')
-        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
-        [printFeatureWeight(feature_weight) for feature_weight in feature_weights[-n:]]
+        print ('Feature\t\tWeight')
+
+        if n is None:
+            [printFeatureWeight(feature_weight) for feature_weight in feature_weights]
+        else:
+            [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
+            [printFeatureWeight(feature_weight) for feature_weight in
+             feature_weights[-min(n, len(feature_weights) - n):]]
+             # Do not print features twice if there are fewer than 2*n features.
+
+    def getFeatureWeights(self, zone_id=None):
+        '''
+        Returns the model's features and their corresponding weights, if the model has feature coefficients.
+
+        :param zone_id: prints features only relevant to this zone.
+            If zone_id is None, considers all features.
+            Note: the implementation is hacky. It considers a feature relevant to a given zone_id if the zone_id
+            appears anywhere in the feature's name.
+        :return dictionary mapping feature names to weights.
+        '''
+        if not hasattr(self.regressor, 'coef_'):
+            print '\tCannot get feature weights for the model.'
+            return
+
+        feature_weights = {}
+        for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
+            if zone_id is None or str(zone_id) in feature_name:
+                feature_weights[feature_name] = self.regressor.coef_[index]
+        return feature_weights
 
     def _exportToDotfile(self):
         '''

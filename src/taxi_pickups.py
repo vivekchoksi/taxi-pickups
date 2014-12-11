@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import MySQLdb
 from models import *
-
+import datetime
 
 class Database(object):
 
@@ -168,10 +168,11 @@ class Dataset(object):
 # The `Evaluator` class evaluates a trained model.
 class Evaluator(object):
 
-    def __init__(self, model, dataset, plot_error):
+    def __init__(self, model, dataset, plot_error, print_feature_weights):
         self.model = model
         self.dataset = dataset
         self.plot_error = plot_error
+        self.print_feature_weights = print_feature_weights
 
     def evaluate(self):
         '''
@@ -189,6 +190,11 @@ class Evaluator(object):
             for test_example in test_examples:
                 predicted_num_pickups.append(self.model.predict(test_example))
                 true_num_pickups.append(test_example['num_pickups'])
+
+        # Print the feature weights specific to a zone.
+        if self.print_feature_weights:
+            start_datetime = datetime.datetime(2013, 1, 20)
+            self._plotFeatureWeights(15504, start_datetime)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -227,6 +233,7 @@ class Evaluator(object):
         # Compute and print coefficient of determination R^2.
         m = metrics.r2_score(true_num_pickups, predicted_num_pickups)
         print 'R^2 Score: %f' % m
+        print
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
@@ -245,10 +252,119 @@ class Evaluator(object):
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
+    def _plotFeatureWeights(self, zone_id, start_datetime, num_hours=7*24):
+        '''
+        :param zone_id: only use features relevant to this zone.
+        :param start_datetime: datetime at which to start extracting features.
+        :param num_hours: number of hours to plot
+
+        Generates a stacked bar chart of all the features weights used to predict the number of pickups in zone zone_id
+        for each hour of the week (from Sunday 12am to Saturday 11pm).
+        '''
+        if not hasattr(self.model, 'feature_extractor'):
+            print '\tCannot plot features for the model.'
+            return
+        else:
+            print 'Plotting features and their weights for each hour.'
+            print 'Start time: %s' % str(start_datetime)
+            print 'Duration : %s hours' % str(num_hours)
+            print
+
+        # Mapping from all features to their corresponding weights.
+        #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
+        feature_weights = self.model.getFeatureWeights()
+
+        # For each data point in the time range, get the weight for each of its features.
+        # plot_values is a mapping from feature templates to a list of all their values at each time step.
+        #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
+        plot_values = {}
+
+        for time_step in xrange(num_hours):
+            curr_datetime = start_datetime + datetime.timedelta(hours=time_step)
+            test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
+
+            # test_example_features is a mapping from feature templates to their identifiers
+            #   EX: test_example_features['Zone_HourOfDay'] = 15402_14
+            test_example_features = self.model.feature_extractor.getFeatureDict(test_example)
+
+            for feature_template, identifier in test_example_features.iteritems():
+                if feature_template not in plot_values:
+                    plot_values[feature_template] = [0] * num_hours
+                feature_name = '%s=%s' % (feature_template, identifier)
+                if feature_name in feature_weights:
+                    plot_values[feature_template][time_step] = feature_weights[feature_name]
+
+        # Generate stacked bar chart, whose series are the feature templates.
+        for feature_template in plot_values.keys():
+            print '%s,' % feature_template,
+        print
+
+        for time_step in xrange(num_hours):
+            for feature_template in plot_values.keys():
+                print '%s,' % plot_values[feature_template][time_step],
+            print
+        print
+
+        # Order these feature templates first, then all the remaining feature templates in plot_values in any order.
+        feature_templates = ['Zone', 'DayOfWeek', 'HourOfDay', 'Zone_DayOfWeek', 'Zone_HourOfDay']
+        for feature_template in list(feature_templates):
+            if feature_template not in plot_values.keys():
+                feature_templates.remove(feature_template)
+        for feature_template in plot_values.keys():
+            if feature_template not in feature_templates:
+                feature_templates.append(feature_template)
+
+        colors = 'bgrcmy'
+        indices = [i for i in xrange(num_hours)]
+        series_index = 0
+        width = 1
+        bars = []
+        # Plot positive values for all series.
+        bottom_values = [0] * num_hours
+        for feature_template in feature_templates:
+            pos_values = [max(0, weight) for weight in plot_values[feature_template]]
+            bar = plt.bar(indices, pos_values,
+                    color=colors[series_index % len(colors)],
+                    width=width,
+                    alpha=0.8,
+                    bottom=bottom_values)
+            bars.append(bar[0])
+            new_bottom_values = [bottom_values[i] + pos_values[i] for i in xrange(num_hours)]
+            bottom_values = new_bottom_values
+            series_index += 1
+
+        # Plot negative values for all series.
+        bottom_values = [0] * num_hours
+        for feature_template in feature_templates:
+            neg_values = [min(0, weight) for weight in plot_values[feature_template]]
+            plt.bar(indices, neg_values,
+                    color=colors[series_index % len(colors)],
+                    width=width,
+                    alpha=0.8,
+                    bottom=[i for i in bottom_values])
+            new_bottom_values = [bottom_values[i] + neg_values[i] for i in xrange(num_hours)]
+            bottom_values = new_bottom_values
+            series_index += 1
+
+        # Decorate plot.
+        plt.grid(True)
+        plt.title('Predicted Number of Pickups in Zone %d' % zone_id)
+        plt.xlabel('Time')
+        plt.ylabel('Number of Pickups')
+        plt.xlim(0, num_hours)
+        plt.grid(True)
+        plt.legend(bars, feature_templates)
+        plt.show()
+
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
+        '''
+        Generates a scatter plot. The true number of pickups is plotted against the prediction error for
+        each data point. The prediction error is defined as the absolute difference between the true value
+        and the predicted value.
+        '''
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
 
-        # Set area of all bubbles to be 50.
+        # Set area of all bubbles to be 70.
         area = [70]*len(error)
         # plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
         plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
@@ -331,6 +447,9 @@ def getOptions():
     parser.add_option('-l', '--local',
                       action='store_true', dest='local', default=False,
                       help='use mysql db instance running locally')
+    parser.add_option('-f', '--feature_weights',
+                      action='store_true', dest='feature_weights', default=False,
+                      help='print feature weights for two zones (a high activity and a low activity zone)')
     options, args = parser.parse_args()
 
     if not options.model:
@@ -352,7 +471,7 @@ def main():
 
     # Instantiate the specified learning model.
     model = getModel(options.model, database, dataset)
-    evaluator = Evaluator(model, dataset, options.plot_error)
+    evaluator = Evaluator(model, dataset, options.plot_error, options.feature_weights)
 
     # Train the model.
     util.verbosePrint('\nTRAINING', model, '...')
