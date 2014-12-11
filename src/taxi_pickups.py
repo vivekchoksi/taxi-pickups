@@ -191,9 +191,9 @@ class Evaluator(object):
                 predicted_num_pickups.append(self.model.predict(test_example))
                 true_num_pickups.append(test_example['num_pickups'])
 
-        # Print the feature weights specific to several zones.
+        # Print the feature weights specific to a zone.
         if self.print_feature_weights:
-            self._printFeatureWeights()
+            self._printFeatureWeights(15102)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -251,18 +251,68 @@ class Evaluator(object):
             print '\t', true_num_pickups[i], '\t\t', predicted_num_pickups[i]
         print
 
-    def _printFeatureWeights(self):
+    def _printFeatureWeights(self, zone_id):
         # Make sure model has method to print feature weights.
-        printFeatureWeights = getattr(self.model, 'printFeatureWeights', None)
-        if callable(printFeatureWeights):
-            printFeatureWeights(zone_id=15102) # Popping, hopping zone
+        if callable(getattr(self.model, 'printFeatureWeights', None)):
+            self.model.printFeatureWeights(zone_id=zone_id) # A popping, hopping zone
         else:
             print 'Cannot print feature weights for this model.'
 
+    def _plotFeatureWeights(self, zone_id, start_datetime, duration):
+        '''
+        :param zone_id: only use features relevant to this zone.
+        :param start_datetime: datetime at which to start extracting features.
+        :param duration: timedelta length of time.
+
+        Generates a stacked bar chart of all the features weights used to predict the number of pickups in zone zone_id
+        for each hour of the week (from Sunday 12am to Saturday 11pm).
+        '''
+        if not hasattr(self.model, 'feature_extractor'):
+            print '\tCannot plot features for the model.'
+            return
+        else:
+            print 'Plotting features and their weights.\n'
+
+        # Mapping from all features to their corresponding weights.
+        #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
+        feature_weights = self.model.getFeatureWeights()
+
+        # For each data point in the time range, get the weight for each of its features.
+        test_weights = []
+
+        end_datetime = start_datetime + duration
+        curr_datetime = start_datetime
+        while curr_datetime < end_datetime:
+            test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
+
+            # Mapping from feature templates to the corresponding feature's weight for this test example.
+            #   EX: test_example_weights['Zone_HourOfDay'] = 324.4565
+            test_example_weights = {}
+
+            # Mapping from feature templates to their identifiers
+            #   EX: test_example_features['Zone_HourOfDay'] = 15402_14
+            test_example_features = self.model.feature_extractor.getFeatureDict(test_example)
+
+            for feature_template, identifier in test_example_features.iteritems():
+                feature_name = '%s=%s' % (feature_template, identifier)
+                test_example_weights[feature_template] = feature_weights[feature_name]
+
+            test_weights.append(test_example_weights)
+            curr_datetime += duration
+
+        # Generate stacked bar chart, whose series are the feature templates.
+        print test_weights
+        # TODO generate chart from test_weights
+        
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
+        '''
+        Generates a scatter plot. The true number of pickups is plotted against the prediction error for
+        each data point. The prediction error is defined as the absolute difference between the true value
+        and the predicted value.
+        '''
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
 
-        # Set area of all bubbles to be 50.
+        # Set area of all bubbles to be 70.
         area = [70]*len(error)
         # plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
         plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')

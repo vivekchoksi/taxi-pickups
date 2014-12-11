@@ -44,7 +44,7 @@ class FeatureExtractor(object):
 
         :return: the scipy matrix that represents the training data.
         """
-        feature_dicts = [self._getFeatureDict(x) for x in X]
+        feature_dicts = [self.getFeatureDict(x) for x in X]
 
         # If clustering is turned on, compute the centroids, then
         # append the nearest centroid ID to each feature vector.
@@ -110,11 +110,11 @@ class FeatureExtractor(object):
 
     def _getDailyRainfallValue(self, rainfall):
         if rainfall == 0:
-            return 'No Rainfall'
+            return 'No_rainfall'
         elif rainfall < 100:
-            return 'Less than 1 inch'
+            return 'Less_than_1_inch'
         else:
-            return 'Greater than 1 inch'
+            return 'Greater_than_1_inch'
 
     def _extractHourlyWeather(self, x, feature_dict):
         hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
@@ -123,11 +123,11 @@ class FeatureExtractor(object):
     def _getHourlyRainfallValue(self, rainfall, use_buckets=True):
         if use_buckets:
             if rainfall == 0:
-                return 'No Rainfall'
+                return 'No_rainfall'
             elif rainfall < 10:
-                return 'Less than 0.1 inches'
+                return 'Less_than_0.1_inches'
             else:
-                return 'Greater than 0.1 inches'
+                return 'Greater_than_0.1_inches'
         else:
             return rainfall
 
@@ -150,7 +150,7 @@ class FeatureExtractor(object):
         Z = self.clusterer.predict(X_vectors)
         [self._extractCluster({'cluster_id': Z[i]}, feature_dicts[i]) for i in xrange(len(Z))]
 
-    def _getFeatureDict(self, x):
+    def getFeatureDict(self, x):
         """
         Transform a training or testing example into a feature vector.
 
