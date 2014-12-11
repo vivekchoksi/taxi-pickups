@@ -19,7 +19,7 @@ class FeatureExtractor(object):
             self.clusterer = MiniBatchKMeans(n_clusters=15, init='k-means++')
         if self.config.getboolean(FEATURE_SELECTION, 'DailyWeather') or \
             self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather') or \
-            self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_HourlyWeather'):
+            self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_HourlyWeather'):
             self.weather_data = Weather()
 
         if util.VERBOSE:
@@ -81,29 +81,19 @@ class FeatureExtractor(object):
     def _extractZoneHourOfDay(self, x, feature_dict):
         feature_dict['Zone_HourOfDay'] = '%d_%02d' % (x['zone_id'], x['start_datetime'].hour)
 
-    # Concatenates the zone, whether the taxi ride is on a weekend, and the hour
-    # of day.
-    def _extractZoneWeekendHour(self, x, feature_dict):
-        feature_dict['Zone_IsWeekend_Hour'] = '%d_%s_%02d' % (x['zone_id'],
-                                                              str(self._isWeekend(x['start_datetime'])),
-                                                              x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
-
     # Concatenates the zone, day of week, and hour of day.
     def _extractZoneDayHour(self, x, feature_dict):
         feature_dict['Zone_DayOfWeek_Hour'] = '%d_%02d_%02d' % (x['zone_id'],
                                                                 x['start_datetime'].weekday(), # Pad day of week with a leading zero.
                                                                 x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
 
-    def _extractZoneWeekendHourlyWeather(self, x, feature_dict):
+    def _extractZoneDayOfWeekHourlyWeather(self, x, feature_dict):
         hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
         rainfallValue = self._getHourlyRainfallValue(hourly_weather['PRCP'], True)
-        feature_dict['Zone_IsWeekend_HourlyRainfall'] = '%d_%s_%s' % (x['zone_id'],
-                                                                str(self._isWeekend(x['start_datetime'])),
+        feature_dict['Zone_DayOfWeek_HourlyRainfall'] = '%d_%02d_%s' % (x['zone_id'],
+                                                                x['start_datetime'].weekday(),
                                                                 rainfallValue)
 
-    def _isWeekend(self, date):
-        # Weekday = 0 for Monday.
-        return 1 if date.weekday() >= 5 else 0
 
     def _extractCluster(self, x, feature_dict):
         feature_dict['Cluster'] = str(x['cluster_id'])
@@ -174,11 +164,9 @@ class FeatureExtractor(object):
             self._extractDailyWeather(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather'):
             self._extractHourlyWeather(x, feature_dict)
-        if self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_Hour'):
-            self._extractZoneWeekendHour(x, feature_dict)
         if self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_Hour'):
             self._extractZoneDayHour(x, feature_dict)
-        if self.config.getboolean(FEATURE_SELECTION, 'Zone_IsWeekend_HourlyWeather'):
-            self._extractZoneWeekendHourlyWeather(x, feature_dict)
+        if self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_HourlyWeather'):
+            self._extractZoneDayOfWeekHourlyWeather(x, feature_dict)
 
         return feature_dict
