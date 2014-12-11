@@ -5,6 +5,8 @@ import datetime
 
 VERBOSE = False
 
+FEATURES_FILE = None
+
 def verbosePrint(*args):
     if VERBOSE:
         for arg in args:
