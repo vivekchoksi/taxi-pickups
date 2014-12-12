@@ -7,6 +7,8 @@ Plotting Learning Curves
 import os
 os.environ['MPLCONFIGDIR'] = "../"
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 import util
 from optparse import OptionParser
