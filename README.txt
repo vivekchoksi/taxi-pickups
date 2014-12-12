@@ -13,14 +13,13 @@ Python packages setup
 ======================
 sudo pip install -r requirements.txt
 
-
 Running the program
 ====================
-Sample usage: python taxi_pickups.py -m baseline
+Sample usage: python taxi_pickups.py -m linear -n 1000 --features features1.cfg
 Run python taxi_pickups.py --help for more options
 
 To submit a job to barley, run:
-python submit_job_barley.py [model params-- e.g. -m autolinear -n 1000 -v]
+python submit_job_barley.py [model params-- e.g. -m autolinear -n 1000 -v --features features1.cfg]
 
 Useful Commands
 =================
@@ -32,5 +31,4 @@ sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_p
 
 To connect to the remote MySQL instance from your machine:
 mysql -h taxi-pickups.cw6ohvqgsy0r.us-west-1.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
-
 
