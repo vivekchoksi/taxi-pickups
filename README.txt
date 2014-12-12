@@ -2,7 +2,22 @@ Description
 ==============
 Repository for our CS221 project for Autumn 2014.
 
-MySQL setup:
+Quick description
+=================
+If you wish to run our code right away,you can execute the following
+to run the linear model on 1000 data points:
+
+cd src
+python taxi_pickups.py -m linear -n 1000 --features features1.cfg -v
+
+If you get a dependencies error, try running the following:
+sudo pip install -r requirements.txt
+
+Or the following if you are on Stanford's corn machines:
+pip install --user MySQL-python==1.2.5
+pip install --user pybrain
+
+MySQL setup
 ==============
 # Note: this setup is only necessary if you want to host the data
 # from your local MySQL server. Otherwise, you can just use the
