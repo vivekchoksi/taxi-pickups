@@ -142,7 +142,7 @@ class RegressionModel(Model):
         '''
         if not hasattr(self.regressor, 'coef_'):
             print '\tCannot get feature weights for the model.'
-            return
+            return None
 
         feature_weights = {}
         for feature_name, index in self.feature_extractor.getFeatureNameIndices().iteritems():
@@ -259,11 +259,11 @@ class AutoTunedRegressionModel(RegressionModel):
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
         sgd_regressor = linear_model.SGDRegressor(
-            n_iter=3000, # Takes many iterations to converge.
+            n_iter=8000, # Takes many iterations to converge.
             alpha=0.0, # Works better without regularization.
             learning_rate='invscaling',
-            eta0=0.1, # Converges faster with higher-than-default initial learning rate.
-            power_t=0.1,
+            eta0=0.2, # Converges faster with higher-than-default initial learning rate.
+            power_t=0.4,
             verbose=1 if util.VERBOSE else 0
         )
         RegressionModel.__init__(self, database, dataset, sgd_regressor)
@@ -299,6 +299,21 @@ class SupportVectorRegression(RegressionModel):
     def __str__(self):
         return 'svr [support vector regression model]'
 
+class AutoTunedSVR(AutoTunedRegressionModel):
+
+    def __init__(self, database, dataset):
+        params = {
+            'C': [1000, 10000, 100000, 1000000, 10000000],
+            'epsilon': [0.01, 0.1, 1, 10],
+            'kernel': ['linear', 'rbf', 'poly', 'sigmoid']
+        }
+        regressor = svm.SVR()
+        cv = util.getCrossValidator(1, 0.9, dataset.trainingExamplesLeft)
+        AutoTunedRegressionModel.__init__(self, database, dataset, regressor, params, cv=cv)
+
+    def __str__(self):
+        return 'autosvr [auto tuned support vector regression model]'
+
 class DecisionTreeRegression(RegressionModel):
     def __init__(self, database, dataset):
         # NOTE: The decision tree is very sensitive to max_depth and
@@ -306,7 +321,8 @@ class DecisionTreeRegression(RegressionModel):
         # of over / under-fitting. Intuitively, these parameters should
         # depend on the train set size. TODO: Tune these parameters.
         dt_regressor = tree.DecisionTreeRegressor(
-            max_depth=50,
+            max_features=0.9,
+            max_depth=100,
             min_samples_leaf=2
         )
         RegressionModel.__init__(self, database, dataset, dt_regressor, sparse=False)
@@ -323,7 +339,7 @@ class AutoTunedDecisionTree(AutoTunedRegressionModel):
             'min_samples_leaf': [2, 5, 10]
         }
         dt_regressor = tree.DecisionTreeRegressor()
-        cv = util.getCrossValidator(2, 0.9, dataset.trainingExamplesLeft)
+        cv = util.getCrossValidator(1, 0.9, dataset.trainingExamplesLeft)
         AutoTunedRegressionModel.__init__(self, database, dataset, dt_regressor, params, cv=cv, sparse=False)
 
     def __str__(self):

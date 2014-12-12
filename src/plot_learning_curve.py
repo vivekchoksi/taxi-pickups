@@ -7,6 +7,8 @@ Plotting Learning Curves
 import os
 os.environ['MPLCONFIGDIR'] = "../"
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 import util
 from optparse import OptionParser
@@ -96,7 +98,7 @@ def extractDataset(dataset, model_name):
 
     dataset.switchToTestMode()
     while dataset.hasMoreTestExamples():
-        row_dicts.append(dataset.getTestExample())
+        row_dicts.extend(dataset.getTestExamples())
 
     util.verbosePrint('Number of examples being considered for train and test:',
         len(row_dicts))
@@ -119,17 +121,27 @@ def getOptions():
     parser.add_option('-n', '--numexamples', type='int', dest='num_examples',
                       default=Const.DATASET_SIZE, help='use a dataset of size NUM',
                       metavar='NUM')
+    parser.add_option('-l', '--local',
+                      action='store_true', dest='local', default=False,
+                      help='use mysql db instance running locally')
     parser.add_option('-i', '--iterations', type='int',
                       dest='num_iter', default=5,
                       help='number of runs for each data set size to average over')
     parser.add_option('-f', '--train_fraction', type='float',
                       dest='train_fraction', default=0.7,
                       help='fraction of num_examples to use as training data')
+    parser.add_option('--features', dest='features_file',
+                      help='name of the features config file; e.g. features1.cfg')
     options, args = parser.parse_args()
 
-    if not options.model:
-        print 'Usage: \tpython plot_learning_curve.py -m <model-name>'
+    if not options.model or not options.features_file:
+        print 'Usage: \tpython plot_learning_curve.py -m <model-name> --features <features-filename.cfg>'
         print '\nTo see more options, run python plot_learning_curve.py --help'
+        exit(1)
+
+    if os.path.splitext(options.features_file)[1] != '.cfg' or not os.path.isfile(options.features_file):
+        print 'Invalid feature file name. Must be a valid .cfg file.'
+        print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
 
     if options.verbose:
@@ -139,7 +151,8 @@ def getOptions():
 
 def main():
     options, args = getOptions()
-    database = Database()
+    util.FEATURES_FILE = options.features_file
+    database = Database(options.local)
     dataset = Dataset(0.7, options.num_examples, database, 
         Const.AGGREGATED_PICKUPS)
     X, y = extractDataset(dataset, options.model)
@@ -148,8 +161,8 @@ def main():
     cv = util.getCrossValidator(options.num_iter, options.train_fraction, 
         options.num_examples)
     plotLearningCurve(model, title, X, y, ylim=(0.5, 1.01), cv=cv, n_jobs=4)
-    plt.show()
-
+    plt.savefig('../outfiles/learning_curve_%s.png' % (util.currentTimeString()), bbox_inches='tight')
+    plt.close()
 
 if __name__ == '__main__':
     main()

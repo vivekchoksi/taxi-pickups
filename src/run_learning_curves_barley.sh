@@ -8,7 +8,7 @@
 #$ -j y
 
 # Mail to this address.
-#$ -M jgrinber@stanford.edu
+#$ -M arzavj@stanford.edu
 # Send mail on beginning, ending, or suspension of job.
 #$ -m bes
 
@@ -24,5 +24,5 @@ pip install --user MySQL-python==1.2.5
 pip install --user pybrain
 
 # CONFIGURE THIS TO BE THE COMMAND YOU WANT TO RUN.
-time python taxi_pickups.py ${args}
+time python plot_learning_curve.py ${args}
 

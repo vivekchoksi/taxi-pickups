@@ -5,6 +5,9 @@ os.environ['MPLCONFIGDIR'] = "../"
 import random
 from math import sqrt
 from optparse import OptionParser
+import matplotlib
+matplotlib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
+                        # Important! Execute this command *BEFORE* we import matplotlib.pyplot.
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import MySQLdb
@@ -274,7 +277,10 @@ class Evaluator(object):
         # Mapping from all features to their corresponding weights.
         #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
         feature_weights = self.model.getFeatureWeights()
-
+        if feature_weights is None:
+            print '\tAborting feature weight plot.'
+            return
+        
         # For each data point in the time range, get the weight for each of its features.
         # plot_values is a mapping from feature templates to a list of all their values at each time step.
         #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
@@ -381,7 +387,7 @@ class Evaluator(object):
         plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
 
         X_line = range(max(true_num_pickups))
-        plt.plot(X_line, X_line, 'g--', label='perfect prediction line')
+        plt.plot(X_line, X_line, 'g--', color='0.5', label='perfect prediction line')
         # Decorate plot.
         plt.grid(True)
         plt.ylabel('Predicted Number of Pickups')
@@ -419,6 +425,7 @@ class Evaluator(object):
         plt.title('Histogram of the number of taxi pickups')
         plt.xlabel('Number of taxi pickups in any zone and hour-long time slot')
         plt.ylabel('Frequency')
+        plt.grid(True)
 
         plt.savefig('../outfiles/true_vs_predicted_histogram_%s.png' % (util.currentTimeString()), bbox_inches='tight')
         plt.close()
@@ -441,6 +448,8 @@ def getModel(model_name, database, dataset, options):
         return AutoTunedLinearRegression(database, dataset)
     elif lower_name == 'autodtr':
         return AutoTunedDecisionTree(database, dataset)
+    elif lower_name == 'autosvr':
+        return AutoTunedSVR(database, dataset)
     raise Exception('No model with name %s' % model_name)
 
 def getOptions():
