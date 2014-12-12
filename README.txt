@@ -9,13 +9,14 @@ CREATE DATABASE taxi_pickups;
 use taxi_pickups;
 
 # If the data are downloaded as raw pickups, run:
-source /path/to/the/sql/script/load-trip-data.sql
+source /path/to/the/sql/script/load-trip-data.sql;
+source /path/to/the/sql/script/pickups-aggregated.sql;
 
 # If the data have already been transformed into csv format, run:
-source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql
+source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql;
 
-# Make sure to modify the sql scripts to have the correct
-# file paths for your computer.
+# Make sure to modify the sql scripts before running them in order
+# to have the correct file paths for your computer.
 
 Python packages setup
 ======================
