@@ -7,7 +7,15 @@ MySQL setup:
 mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
+
+# If the data are downloaded as raw pickups, run:
 source /path/to/the/sql/script/load-trip-data.sql
+
+# If the data have already been transformed into csv format, run:
+source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql
+
+# Make sure to modify the sql scripts to have the correct
+# file paths for your computer.
 
 Python packages setup
 ======================
@@ -23,7 +31,6 @@ python submit_job_barley.py [model params-- e.g. -m autolinear -n 1000 -v --feat
 
 Useful Commands
 =================
-
 Password for connecting to MySQL db: gottapickthemall
 
 To copy local MySQL database table to AWS instance:
