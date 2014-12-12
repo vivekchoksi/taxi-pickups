@@ -6,7 +6,7 @@ import random
 from math import sqrt
 from optparse import OptionParser
 import matplotlib
-matplotlib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
+matplot.lib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
                         # Important! Execute this command *BEFORE* we import matplotlib.pyplot.
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
@@ -196,9 +196,9 @@ class Evaluator(object):
 
         # Print the feature weights specific to a zone.
         if self.print_feature_weights:
-            start_datetime = datetime.datetime(2013, 1, 20)
-            self._plotFeatureWeights(15504, start_datetime)
+            start_datetime = datetime.datetime(2013, 4, 7)
             self._plotFeatureWeights(14901, start_datetime)
+            self._plotFeatureWeights(16307, start_datetime)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -280,12 +280,11 @@ class Evaluator(object):
         if feature_weights is None:
             print '\tAborting feature weight plot.'
             return
-        
+
         # For each data point in the time range, get the weight for each of its features.
         # plot_values is a mapping from feature templates to a list of all their values at each time step.
         #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
         plot_values = {}
-
         for time_step in xrange(num_hours):
             curr_datetime = start_datetime + datetime.timedelta(hours=time_step)
             test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
@@ -326,7 +325,7 @@ class Evaluator(object):
             if feature_template not in feature_templates:
                 feature_templates.append(feature_template)
 
-        colors = 'bgrcmy'
+        colors = ['b', 'g', 'r', 'c', 'y', 'm', '0.2', '0.8']
         indices = [i for i in xrange(num_hours)]
         series_index = 0
         width = 1
@@ -345,6 +344,7 @@ class Evaluator(object):
             bottom_values = new_bottom_values
             series_index += 1
 
+        series_index = 0
         # Plot negative values for all series.
         bottom_values = [0] * num_hours
         for feature_template in feature_templates:
@@ -361,13 +361,15 @@ class Evaluator(object):
         # Decorate plot.
         plt.grid(True)
         plt.title('Predicted Number of Pickups in Zone %d' % zone_id)
-        plt.xlabel('Time')
+        plt.xlabel('Time (hours since 2013 April 7, 12am)')
         plt.ylabel('Number of Pickups')
         plt.xlim(0, num_hours)
         plt.ylim(-1000, 2000)
+        plt.xticks(np.arange(0, num_hours + 1, 12))
         plt.grid(True)
         plt.legend(bars, feature_templates)
         plt.savefig('../outfiles/feature_weights_zone_%d_%s.png' % (zone_id, util.currentTimeString()), bbox_inches='tight')
+        # plt.show()
         plt.close()
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
