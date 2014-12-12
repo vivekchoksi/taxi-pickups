@@ -384,7 +384,7 @@ class Evaluator(object):
         plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
 
         X_line = range(max(true_num_pickups))
-        plt.plot(X_line, X_line, 'g--', label='perfect prediction line')
+        plt.plot(X_line, X_line, 'g--', color='0.5', label='perfect prediction line')
         # Decorate plot.
         plt.grid(True)
         plt.ylabel('Predicted Number of Pickups')
