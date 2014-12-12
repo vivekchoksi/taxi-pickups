@@ -4,6 +4,10 @@ Repository for our CS221 project for Autumn 2014.
 
 MySQL setup:
 ==============
+# Note: this setup is only necessary if you want to host the data
+# from your local MySQL server. Otherwise, you can just use the
+# Amazon RDS with no extra setup steps.
+
 mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
