@@ -114,40 +114,32 @@ class Plotter(object):
         num_pickups_by_zone = {}
         num_pickups_list = []
 
-        pickups_threshold = 5
-        num_under_threshold = 0
-
         for row in self.data:
             zone_id = str(row['zone_id'])
             num_pickups_by_zone[zone_id] = num_pickups_by_zone.get(zone_id, 0) + row['num_pickups']
 
         for num_pickups in num_pickups_by_zone.values():
             num_pickups_list.append(num_pickups)
-            if num_pickups < pickups_threshold:
-                num_under_threshold += 1
-
-        print len(num_pickups_by_zone), 'total zones'
-        print num_under_threshold, 'zones for which there were fewer than', pickups_threshold, \
-            'pickups during the entire month'
 
         # Plot histogram.
-        num_bins = 100
+        num_bins = 20
         plt.hist(num_pickups_list, num_bins, alpha=0.5)
+        plt.yscale('log')
 
         # Label histogram.
         plt.title('Histogram of the number of taxi pickups by zone')
-        plt.xlabel('Number of taxi pickups in a zone during one month')
-        plt.ylabel('Frequency')
+        plt.xlabel('Total number of taxi pickups during four months')
+        plt.ylabel('Number of zones')
 
         plt.show()
 
 def main(args):
-    database = taxi_pickups.Database()
+    database = taxi_pickups.Database(is_local=False)
     plotter = Plotter(database, Const.AGGREGATED_PICKUPS)
     # plotter.plotNumPickups()
-    plotter.plotNumPickupsByDay()
+    # plotter.plotNumPickupsByDay()
     # plotter.plotNumPickupsByHour()
-    # plotter.plotNumPickupsByZone()
+    plotter.plotNumPickupsByZone()
 
 if __name__ == '__main__':
     main(sys.argv)
