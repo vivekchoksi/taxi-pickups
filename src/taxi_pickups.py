@@ -6,7 +6,7 @@ import random
 from math import sqrt
 from optparse import OptionParser
 import matplotlib
-matplot.lib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
+matplotlib.use('Agg')   # Weird thing we need to do to get Barley to use matplotlib.
                         # Important! Execute this command *BEFORE* we import matplotlib.pyplot.
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
@@ -92,13 +92,14 @@ class Dataset(object):
             # Do something with the test example...
     '''
 
-    def __init__(self, train_fraction, dataset_size, database, table_name):
+    def __init__(self, train_fraction, dataset_size, max_train_examples, database, table_name):
         self.db = database
         self.table_name = table_name # table to read examples from
         self.trainingExamplesLeft = int(train_fraction * dataset_size)
         self.testingExamplesLeft = dataset_size - self.trainingExamplesLeft
         self.last_train_id = self._getLastTrainID()
         self.last_fetched_id = 0
+        self.trainingExamplesLeft = min(self.trainingExamplesLeft, max_train_examples)
 
     def hasMoreTrainExamples(self):
         return self.trainingExamplesLeft > 0
@@ -470,6 +471,8 @@ def getOptions():
     parser.add_option('-n', '--numexamples', type='int', dest='num_examples',
                       default=Const.DATASET_SIZE, help='use a dataset of size NUM',
                       metavar='NUM')
+    parser.add_option('--maxtrainexamples', type='int', dest='max_train_examples',
+                      default=sys.maxint, help='maximum number of examples on which to train')
     parser.add_option('-p', '--plot_error',
                       action='store_true', dest='plot_error', default=False,
                       help='generate prediction error scatter plot')
@@ -504,7 +507,7 @@ def main():
     options, args = getOptions()
 
     database = Database(options.local)
-    dataset = Dataset(0.7, options.num_examples, database, Const.AGGREGATED_PICKUPS)
+    dataset = Dataset(0.7, options.num_examples, options.max_train_examples, database, Const.AGGREGATED_PICKUPS)
     util.verbosePrint(dataset)
 
     util.FEATURES_FILE = options.features_file
