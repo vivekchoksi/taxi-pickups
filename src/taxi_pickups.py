@@ -277,7 +277,10 @@ class Evaluator(object):
         # Mapping from all features to their corresponding weights.
         #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
         feature_weights = self.model.getFeatureWeights()
-
+        if feature_weights is None:
+            print '\tAborting feature weight plot.'
+            return
+        
         # For each data point in the time range, get the weight for each of its features.
         # plot_values is a mapping from feature templates to a list of all their values at each time step.
         #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
