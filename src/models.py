@@ -160,7 +160,7 @@ class RegressionModel(Model):
         out_file_png = out_file_prefix + '.png'
         print '\n\tExporting decision tree to dotfile: ' + out_file_dot
         print '\tTo view the graph, first convert to png using the ' \
-            'command: dot -Tpng %s %s' % (out_file_dot, out_file_png)
+            'command: dot -Tpng %s -o %s' % (out_file_dot, out_file_png)
         print '\tNote: this command requires the program graphviz, which ' \
             'is installed on the corn machines.'
         tree.export_graphviz(self.regressor, out_file=out_file_dot)
