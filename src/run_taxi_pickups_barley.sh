@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This bash script can be invoked in the qsub command
+# to submit a job to barley. This script is called
+# from the python script submit_job_barley.py.
+
 # Tell grid engine to merge stdout and stderr streams.
 #$ -j y
 

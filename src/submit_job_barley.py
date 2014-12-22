@@ -1,5 +1,15 @@
 #!/usr/bin/python
 
+'''
+This file automates submitting a taxi_pickups.py run to barley.
+
+You can change the parameters to the qsub command below.
+
+Sample usage:
+    python submit_job_barley.py -m autolinear -n 1000 -v
+
+'''
+
 import os
 import sys
 
