@@ -195,6 +195,7 @@ class Evaluator(object):
         if self.print_feature_weights:
             start_datetime = datetime.datetime(2013, 1, 20)
             self._plotFeatureWeights(15504, start_datetime)
+            self._plotFeatureWeights(14901, start_datetime)
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -265,10 +266,10 @@ class Evaluator(object):
             print '\tCannot plot features for the model.'
             return
         else:
-            print 'Plotting features and their weights for each hour.'
-            print 'Start time: %s' % str(start_datetime)
-            print 'Duration : %s hours' % str(num_hours)
-            print
+            util.verbosePrint('Plotting features and their weights for each hour.')
+            util.verbosePrint('\tStart time: %s' % str(start_datetime))
+            util.verbosePrint('\tDuration : %s hours' % str(num_hours))
+            util.verbosePrint('')
 
         # Mapping from all features to their corresponding weights.
         #   EX: feature_weights['Zone_HourOfDay=15402_14'] = 324.4565
@@ -294,7 +295,9 @@ class Evaluator(object):
                 if feature_name in feature_weights:
                     plot_values[feature_template][time_step] = feature_weights[feature_name]
 
-        # Generate stacked bar chart, whose series are the feature templates.
+        # Print out feature weight values, where each column represents a feature template, and each row
+        # is the weights at one hour. This is useful for copy and pasting into a CSV file.
+        '''
         for feature_template in plot_values.keys():
             print '%s,' % feature_template,
         print
@@ -304,6 +307,9 @@ class Evaluator(object):
                 print '%s,' % plot_values[feature_template][time_step],
             print
         print
+        '''
+
+        # Generate stacked bar chart, whose series are the feature templates.
 
         # Order these feature templates first, then all the remaining feature templates in plot_values in any order.
         feature_templates = ['Zone', 'DayOfWeek', 'HourOfDay', 'Zone_DayOfWeek', 'Zone_HourOfDay']
@@ -352,9 +358,11 @@ class Evaluator(object):
         plt.xlabel('Time')
         plt.ylabel('Number of Pickups')
         plt.xlim(0, num_hours)
+        plt.ylim(-1000, 2000)
         plt.grid(True)
         plt.legend(bars, feature_templates)
-        plt.show()
+        plt.savefig('../outfiles/feature_weights_zone_%d_%s.png' % (zone_id, util.currentTimeString()), bbox_inches='tight')
+        plt.close()
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         '''
@@ -362,6 +370,9 @@ class Evaluator(object):
         each data point. The prediction error is defined as the absolute difference between the true value
         and the predicted value.
         '''
+        util.verbosePrint('Plotting predicted versus true pickup scatter plot.')
+        util.verbosePrint('')
+
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
 
         # Set area of all bubbles to be 70.
@@ -384,13 +395,17 @@ class Evaluator(object):
         # Hard-code xmin, ymin to be -10, and constrain xmax, ymax to be the greater of the two.
         xmin ,xmax, ymin, ymax = plt.axis()
         plt.axis((-10, max(xmax, ymax), -10, max(xmax, ymax)))
-        plt.show()
+        plt.savefig('../outfiles/true_vs_predicted_scatter_%s.png' % (util.currentTimeString()), bbox_inches='tight')
+        plt.close()
 
     def _plotPredictionHistogram(self, true_num_pickups, predicted_num_pickups):
         '''
         Plots two histograms side-by-side showing the distribution of true and
         predicted number of pickups.
         '''
+        util.verbosePrint('Plotting predicted versus true pickup histogram.')
+        util.verbosePrint('')
+
         # Plot histogram.
         num_bins = 30
         plt.hist([predicted_num_pickups, true_num_pickups], num_bins, \
@@ -405,9 +420,10 @@ class Evaluator(object):
         plt.xlabel('Number of taxi pickups in any zone and hour-long time slot')
         plt.ylabel('Frequency')
 
-        plt.show()
+        plt.savefig('../outfiles/true_vs_predicted_histogram_%s.png' % (util.currentTimeString()), bbox_inches='tight')
+        plt.close()
 
-def getModel(model_name, database, dataset):
+def getModel(model_name, database, dataset, options):
     lower_name = model_name.lower()
     if lower_name == 'baseline':
         return Baseline(database, dataset)
@@ -420,7 +436,7 @@ def getModel(model_name, database, dataset):
     elif lower_name == 'dtr':
         return DecisionTreeRegression(database, dataset)
     elif lower_name == 'nnr':
-        return NueralNetworkRegression(database, dataset)
+        return NueralNetworkRegression(database, dataset, options.hidden_layer_multiplier)
     elif lower_name == 'autolinear':
         return AutoTunedLinearRegression(database, dataset)
     elif lower_name == 'autodtr':
@@ -437,6 +453,8 @@ def getOptions():
     parser = OptionParser()
     parser.add_option('-m', '--model', dest='model',
                       help='write report to MODEL', metavar='MODEL')
+    parser.add_option('--features', dest='features_file',
+                      help='name of the features config file; e.g. features1.cfg')
     parser.add_option('-v', '--verbose',
                       action='store_true', dest='verbose', default=False,
                       help='print verbose output')
@@ -449,15 +467,24 @@ def getOptions():
     parser.add_option('-l', '--local',
                       action='store_true', dest='local', default=False,
                       help='use mysql db instance running locally')
-    parser.add_option('-f', '--feature_weights',
+    parser.add_option('-f', '--feature_weights_plot',
                       action='store_true', dest='feature_weights', default=False,
                       help='print feature weights for two zones (a high activity and a low activity zone)')
+    parser.add_option('--hidden_layer_multiplier', type='float', dest='hidden_layer_multiplier',
+                      default=1,
+                      help='the size of the neural network hidden layer is INPUT_DIMS * hidden_layer_multipler')
     options, args = parser.parse_args()
 
-    if not options.model:
-        print 'Usage: \tpython taxi_pickups.py -m <model-name>'
+    if not options.model or not options.features_file:
+        print 'Usage: \tpython taxi_pickups.py -m <model-name> --features <features-filename.cfg>'
         print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
+
+    if os.path.splitext(options.features_file)[1] != '.cfg' or not os.path.isfile(options.features_file):
+        print 'Invalid feature file name. Must be a valid .cfg file.'
+        print '\nTo see more options, run python taxi_pickups.py --help'
+        exit(1)
+
 
     if options.verbose:
         util.VERBOSE = True
@@ -471,8 +498,10 @@ def main():
     dataset = Dataset(0.7, options.num_examples, database, Const.AGGREGATED_PICKUPS)
     util.verbosePrint(dataset)
 
+    util.FEATURES_FILE = options.features_file
+
     # Instantiate the specified learning model.
-    model = getModel(options.model, database, dataset)
+    model = getModel(options.model, database, dataset, options)
     evaluator = Evaluator(model, dataset, options.plot_error, options.feature_weights)
 
     # Train the model.

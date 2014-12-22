@@ -127,15 +127,13 @@ INSERT INTO pickups_aggregated_manhattan_temp
 --     num_pickups INT NOT NULL
 -- );
 
--- ALTER TABLE pickups_aggregated_manhattan AUTO_INCREMENT=1;
+ALTER TABLE pickups_aggregated_manhattan AUTO_INCREMENT=1;
 
 INSERT INTO pickups_aggregated_manhattan (
     SELECT * from pickups_aggregated_manhattan_temp
     ORDER BY start_datetime
 ) ORDER BY start_datetime;
 
--- ALTER TABLE `pickups_aggregated_manhattan` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
--- KEY FIRST;
+ALTER TABLE `pickups_aggregated_manhattan` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
+KEY FIRST;
 
-
--- ALTER TABLE pickups_aggregated_manhattan ADD CONSTRAINT unique_zones_times UNIQUE(zone_id, start_datetime);

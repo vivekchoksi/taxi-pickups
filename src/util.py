@@ -1,8 +1,11 @@
 #!/usr/bin/python
 import sys, random
 import numpy as np
+import datetime
 
 VERBOSE = False
+
+FEATURES_FILE = None
 
 def verbosePrint(*args):
     if VERBOSE:
@@ -15,6 +18,9 @@ def zoneIdToLat(zone_id):
 
 def zoneIdToLong(zone_id):
     return (int(zone_id) % 200 - 75 * 100) / 100.0
+
+def currentTimeString():
+    return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 def getCrossValidator(num_iter, train_fraction, num_examples):
     verbosePrint(
