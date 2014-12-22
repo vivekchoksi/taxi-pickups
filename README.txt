@@ -4,7 +4,7 @@ Repository for our CS221 project for Autumn 2014.
 
 Quick description
 =================
-If you wish to run our code right away,you can execute the following
+If you wish to run our code right away, you can execute the following
 to run the linear model on 1000 data points:
 
 cd src
