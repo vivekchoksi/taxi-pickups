@@ -13,9 +13,19 @@ from models import *
 
 class Database(object):
 
-    def __init__(self):
-        self.db = MySQLdb.connect(
-            host='localhost', user='root', passwd='', db=Const.DATABASE_NAME)
+    def __init__(self, is_local):
+        if is_local:
+            self.db = MySQLdb.connect(
+                host='localhost',
+                user='root',
+                passwd='',
+                db=Const.DATABASE_NAME)
+        else:
+            self.db = MySQLdb.connect(
+                host=Const.MYSQL_HOST,
+                user=Const.MYSQL_USER,
+                passwd=Const.MYSQL_PASSWD,
+                db=Const.DATABASE_NAME)
 
     def execute_query(self, query_string, fetch_all=True):
         '''
@@ -60,7 +70,7 @@ class Dataset(object):
             # Do something with the training examples...
 
         while dataset.hasMoreTestExamples():
-            test_example = dataset.getTestExample()
+            test_examples = dataset.getTestExamples(Const.TEST_BATCH_SIZE)
             # Do something with the test example...
     '''
 
@@ -96,7 +106,7 @@ class Dataset(object):
         self.trainingExamplesLeft -= batch_size
         return examples
 
-    def getTestExample(self):
+    def getTestExamples(self, batch_size=1):
         '''
         :return: test example, represented as a dict.
         '''
@@ -106,9 +116,12 @@ class Dataset(object):
         if self.last_fetched_id < self.last_train_id:
             self.switchToTestMode()
 
-        example = self._getExamples(num_examples=1)[0]
-        self.testingExamplesLeft -= 1
-        return example
+        if batch_size > self.testingExamplesLeft:
+            batch_size = self.testingExamplesLeft
+
+        examples = self._getExamples(batch_size)
+        self.testingExamplesLeft -= batch_size
+        return examples
 
     def _getExamples(self, num_examples=1):
         '''
@@ -157,9 +170,10 @@ class Evaluator(object):
         true_num_pickups = []
         self.dataset.switchToTestMode()
         while self.dataset.hasMoreTestExamples():
-            test_example = self.dataset.getTestExample()
-            predicted_num_pickups.append(self.model.predict(test_example))
-            true_num_pickups.append(test_example['num_pickups'])
+            test_examples = self.dataset.getTestExamples(Const.TEST_BATCH_SIZE)
+            for test_example in test_examples:
+                predicted_num_pickups.append(self.model.predict(test_example))
+                true_num_pickups.append(test_example['num_pickups'])
 
         # Evaluate the predictions.
         self._evaluatePredictions(true_num_pickups, predicted_num_pickups)
@@ -297,6 +311,9 @@ def getOptions():
     parser.add_option('-p', '--plot_error',
                       action='store_true', dest='plot_error', default=False,
                       help='generate prediction error scatter plot')
+    parser.add_option('-l', '--local',
+                      action='store_true', dest='local', default=False,
+                      help='use mysql db instance running locally')
     options, args = parser.parse_args()
 
     if not options.model:
@@ -312,7 +329,7 @@ def getOptions():
 def main():
     options, args = getOptions()
 
-    database = Database()
+    database = Database(options.local)
     dataset = Dataset(0.7, options.num_examples, database, Const.AGGREGATED_PICKUPS)
     util.verbosePrint(dataset)
 
