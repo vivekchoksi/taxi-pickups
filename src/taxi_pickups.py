@@ -11,6 +11,7 @@ matplotlib.use('Agg')   # Weird thing we need to do to get Barley to use matplot
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 import MySQLdb
+from passwords import Passwords
 from models import *
 import datetime
 
@@ -26,16 +27,18 @@ class Database(object):
         '''
         if self.is_local:
             self.db = MySQLdb.connect(
-                host='localhost',
-                user='root',
-                passwd='',
-                db=Const.DATABASE_NAME)
+                host=Passwords.LOCAL_MYSQL_HOST,
+                user=Passwords.LOCAL_MYSQL_USER,
+                passwd=Passwords.LOCAL_MYSQL_PASSWORD,
+                db=Const.DATABASE_NAME
+            )
         else:
             self.db = MySQLdb.connect(
-                host=Const.MYSQL_HOST,
-                user=Const.MYSQL_USER,
-                passwd=Const.MYSQL_PASSWD,
-                db=Const.DATABASE_NAME)
+                host=Passwords.REMOTE_MYSQL_HOST,
+                user=Passwords.REMOTE_MYSQL_USER,
+                passwd=Passwords.REMOTE_MYSQL_PASSWORD,
+                db=Const.DATABASE_NAME
+            )
 
     def execute_query(self, query_string, fetch_all=True):
         '''

@@ -10,7 +10,3 @@ class Const(object):
 
     # Number of rows in January aggregated pickups table.
     DATASET_SIZE = 482022 
-    
-
-    
-    
