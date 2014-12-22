@@ -26,7 +26,7 @@ CREATE TABLE trip_data (
 ALTER TABLE trip_data AUTO_INCREMENT=1;
 
 # Load the data from csv.
-LOAD DATA LOCAL INFILE '/Users/vivek/Documents/Git/taxi-pickups/trip_data_1.csv' 
+LOAD DATA LOCAL INFILE '/Users/vivek/Documents/Git/taxi-pickups/sql/trip_data_3.csv' 
 INTO TABLE trip_data 
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n'

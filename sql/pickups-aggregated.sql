@@ -19,12 +19,12 @@
 USE taxi_pickups;
 
 
--- #### Create a temporary pickups_aggregated_temp table
+-- #### Create a temporary pickups_aggregated_manhattan_temp table
 -- that does not include rows with zero pickups. (This whole
 -- step takes ~6 minutes.)
-DROP TABLE IF EXISTS pickups_aggregated_temp;
+DROP TABLE IF EXISTS pickups_aggregated_manhattan_temp;
 
-CREATE TABLE pickups_aggregated_temp (
+CREATE TABLE pickups_aggregated_manhattan_temp (
     -- We define a fixed time interval (1 hour), so no need for end time.
     start_datetime DATETIME NOT NULL,
 
@@ -42,7 +42,7 @@ CREATE TABLE pickups_aggregated_temp (
     UNIQUE(zone_id, start_datetime)
 );
 
-INSERT INTO pickups_aggregated_temp
+INSERT INTO pickups_aggregated_manhattan_temp
 SELECT
     DATE_FORMAT(MIN(pickup_datetime), '%Y-%m-%d %H:00:00') as start_datetime,
     (
@@ -52,8 +52,24 @@ SELECT
     count(id) as num_pickups
 FROM trip_data
 WHERE
-    pickup_latitude BETWEEN 40.5 AND 41.0 AND
-    pickup_longitude BETWEEN -74.3 AND -73.7
+    -- Rectangle that encloses the whole of NYC. (pickups_aggregated)
+    -- pickup_latitude BETWEEN 40.5 AND 41.0 AND
+    -- pickup_longitude BETWEEN -74.3 AND -73.7
+
+    -- Rectangle that encloses Manhattan, Brooklyn, Bronx, Queens. (pickups_aggregated_zoomed)
+    -- pickup_latitude BETWEEN 40.6 AND 40.9 AND
+    -- pickup_longitude BETWEEN -74.0 AND -73.8
+
+    -- Rectangle that encloses Manhattan, part of Queens, Bronx. (pickups_aggregated_tiny)
+    -- pickup_latitude BETWEEN 40.7 AND 40.9 AND
+    -- pickup_longitude BETWEEN -74.0 AND -73.9
+
+    -- Rectangle that encloses Manhattan. (pickups_aggregated_manhattan)
+    pickup_latitude BETWEEN 40.7 AND 40.84 AND
+    pickup_longitude BETWEEN -74.02 AND -73.89
+
+    -- Corners at 40.70, -74.02; 40.84, -73.89
+
 GROUP BY CONCAT(
     FLOOR(pickup_longitude * 100), '_',
     FLOOR(pickup_latitude * 100), '_',
@@ -70,17 +86,17 @@ CREATE TABLE zones_to_remove (
 );
 
 INSERT INTO zones_to_remove (
-    SELECT zone_id FROM pickups_aggregated_temp 
+    SELECT zone_id FROM pickups_aggregated_manhattan_temp 
     GROUP by zone_id HAVING SUM(num_pickups) < 30
 );
 
-DELETE FROM pickups_aggregated_temp
+DELETE FROM pickups_aggregated_manhattan_temp
 WHERE zone_id IN (
     SELECT zone_id FROM zones_to_remove
 );
 
 -- #### Next, find all rows with zero pickups and insert
--- them into pickups_aggregated_temp. 
+-- them into pickups_aggregated_manhattan_temp. 
 
 -- Create a table containing all 744 time slots.
 DROP TABLE IF EXISTS time_slots;
@@ -90,36 +106,36 @@ CREATE TABLE time_slots (
 );
 
 INSERT INTO time_slots (
-    SELECT DISTINCT start_datetime from pickups_aggregated_temp
+    SELECT DISTINCT start_datetime from pickups_aggregated_manhattan_temp
 );
 
--- Find all rows that have zero pickups and insert them into pickups_aggregated_temp.
-INSERT INTO pickups_aggregated_temp
+-- Find all rows that have zero pickups and insert them into pickups_aggregated_manhattan_temp.
+INSERT INTO pickups_aggregated_manhattan_temp
 (
     SELECT start_datetime, zone_id, 0
-    FROM (select distinct zone_id from pickups_aggregated_temp) Z, (select * from time_slots) T
-    WHERE NOT EXISTS (select * from pickups_aggregated_temp where zone_id = Z.zone_id and start_datetime = T.start_datetime)
+    FROM (select distinct zone_id from pickups_aggregated_manhattan_temp) Z, (select * from time_slots) T
+    WHERE NOT EXISTS (select * from pickups_aggregated_manhattan_temp where zone_id = Z.zone_id and start_datetime = T.start_datetime)
 );
 
--- #### Copy pickups_aggregated_temp into our final table,
--- pickups_aggregated, and order it by start_datetime.
-DROP TABLE IF EXISTS pickups_aggregated;
+-- #### Copy pickups_aggregated_manhattan_temp into our final table,
+-- pickups_aggregated_manhattan, and order it by start_datetime.
+-- DROP TABLE IF EXISTS pickups_aggregated_manhattan;
 
-CREATE TABLE pickups_aggregated (
-    start_datetime DATETIME NOT NULL,
-    zone_id INT NOT NULL,
-    num_pickups INT NOT NULL
-);
+-- CREATE TABLE pickups_aggregated_manhattan (
+--     start_datetime DATETIME NOT NULL,
+--     zone_id INT NOT NULL,
+--     num_pickups INT NOT NULL
+-- );
 
-ALTER TABLE pickups_aggregated AUTO_INCREMENT=1;
+-- ALTER TABLE pickups_aggregated_manhattan AUTO_INCREMENT=1;
 
-INSERT INTO pickups_aggregated (
-    SELECT * from pickups_aggregated_temp
+INSERT INTO pickups_aggregated_manhattan (
+    SELECT * from pickups_aggregated_manhattan_temp
     ORDER BY start_datetime
 ) ORDER BY start_datetime;
 
-ALTER TABLE `pickups_aggregated` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
-KEY FIRST;
+-- ALTER TABLE `pickups_aggregated_manhattan` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY
+-- KEY FIRST;
 
 
--- ALTER TABLE pickups_aggregated ADD CONSTRAINT unique_zones_times UNIQUE(zone_id, start_datetime);
+-- ALTER TABLE pickups_aggregated_manhattan ADD CONSTRAINT unique_zones_times UNIQUE(zone_id, start_datetime);
