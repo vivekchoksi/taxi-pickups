@@ -169,7 +169,5 @@ class Dataset(object):
         return self.db.execute_query(query_string, fetch_all=False)[0]['max_id']
 
     def __str__(self):
-        info = '%d training examples, %d testing examples ' % \
-            (self.trainingExamplesLeft, self.testingExamplesLeft)
-        info += ('from table: %s' % self.table_name)
-        return info
+        return '%d training examples, %d testing examples from table: %s' % \
+            (self.trainingExamplesLeft, self.testingExamplesLeft, self.table_name)

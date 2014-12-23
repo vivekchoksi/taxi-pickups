@@ -1,4 +1,11 @@
 #!/usr/bin/python
+'''
+The Model class and its various subclasses define a number of different
+regression models, including two baseline models, linear regression, decision
+tree regression, neural network regression, and support vector regression,
+as well as 'auto-tuning' grid-search versions of some of the aforementioned
+models. sklearn grid_search is used to determine optimal model parameters.
+'''
 import sys
 import operator
 from abc import ABCMeta, abstractmethod
@@ -39,8 +46,8 @@ class Model(object):
     def __str__(self):
         pass
 
-# This class can perform training and testing on the input regression
-# model. Specific model classes can subclass from RegressionModel.
+# RegressionModel perform training and testing on the regression
+# model input into its constructor.
 class RegressionModel(Model):
     __metaclass__ = ABCMeta
 
@@ -58,11 +65,6 @@ class RegressionModel(Model):
         util.verbosePrint(self.regressor)
 
     def train(self):
-        '''
-        See Model for comments on the parameters and return value.
-        We are using `fit()` rather than `partial_fit()` since the January
-        data is small enough to permit fitting all data into RAM.
-        '''
         # Populate `row_dicts` with all training examples, represented as a
         # list of dicts.
         row_dicts = []
@@ -83,37 +85,37 @@ class RegressionModel(Model):
                 self._exportToDotfile()
 
     def predict(self, test_example):
-        '''
-        Predicts the number of pickups at the specified time and location,
-        within a 1 hour interval and 0.01 x 0.01 degrees lat/long box.
-
-        See Model for comments on the parameters and return value.
-        '''
-        vectorized_example = self.feature_extractor.getFeatureVectors([test_example], is_test=True)
+        vectorized_example = self.feature_extractor.getFeatureVectors(
+            [test_example], is_test=True)
         y = self.regressor.predict(vectorized_example)[0]
+
+        # Set 0 to be the lower bound for predictions, since negative numbers
+        # of taxi pickups are impossible.
         y = max(0.0, y)
         return y
 
     def _printMemoryStats(self, row_dicts, X):
         print '\n\t---- Memory usage stats ----'
-        print '\tTraining feature dicts: \t', sys.getsizeof(row_dicts), " bytes used"
+        print '\tTraining feature dicts: \t', sys.getsizeof(row_dicts), ' bytes used'
         if hasattr(X.data, 'nbytes'):
-            print '\tVectorized training data: \t', X.data.nbytes, " bytes used\n"
+            print '\tVectorized training data: \t', X.data.nbytes, ' bytes used\n'
         else:
-            print '\tVectorized training data: \t', sys.getsizeof(X), " bytes used\n"
+            print '\tVectorized training data: \t', sys.getsizeof(X), ' bytes used\n'
 
     def _printFeatureWeights(self, n=None):
         '''
-        Prints the model's features and their corresponding weights, if the model has feature coefficients.
+        Print the model's features and their corresponding weights, if the
+        model has feature coefficients.
 
-        :param n: prints this many of the best/worst features (prints 2n features total).
-            If n is None, prints all features.
+        :param n: print this many of the best/worst features (2n features total).
+                  If n is None, print all features.
         '''
         feature_weights_dict = self.getFeatureWeights()
         if feature_weights_dict is None:
             return
 
-        feature_weights = [(feature_name, weight) for feature_name, weight in feature_weights_dict.iteritems()]
+        feature_weights = [(feature_name, weight) for feature_name, weight
+                           in feature_weights_dict.iteritems()]
         feature_weights.sort(key=operator.itemgetter(1))
 
         def printFeatureWeight(feature_weight):
@@ -127,11 +129,10 @@ class RegressionModel(Model):
             [printFeatureWeight(feature_weight) for feature_weight in feature_weights[:n]]
             [printFeatureWeight(feature_weight) for feature_weight in
              feature_weights[-min(n, len(feature_weights) - n):]]
-             # Do not print features twice if there are fewer than 2*n features.
 
     def getFeatureWeights(self, zone_id=None):
         '''
-        Returns the model's features and their corresponding weights, if the model has feature coefficients.
+        Return the model's features and their corresponding weights, if the model has feature coefficients.
 
         :param zone_id: prints features only relevant to this zone.
             If zone_id is None, considers all features.
@@ -151,25 +152,24 @@ class RegressionModel(Model):
 
     def _exportToDotfile(self):
         '''
-        Expecting that self.regressor is a decision tree regressor model, export the
-        trained decision tree to a .dot file.
+        Assumes that self.regressor is a decision tree regressor model and
+        exports the trained decision tree to a .dot file.
         '''
-        out_file_prefix = 'dtr_' + str(int(time()))
+        out_file_prefix = Const.OUTFILE_DIRECTORY + 'dtr_' + str(int(time()))
         out_file_dot = out_file_prefix + '.dot'
         out_file_png = out_file_prefix + '.png'
         print '\n\tExporting decision tree to dotfile: ' + out_file_dot
         print '\tTo view the graph, first convert to png using the ' \
             'command: dot -Tpng %s -o %s' % (out_file_dot, out_file_png)
-        print '\tNote: this command requires the program graphviz, which ' \
+        print '\tNote: This command requires the program graphviz, which ' \
             'is installed on the corn machines.'
         tree.export_graphviz(self.regressor, out_file=out_file_dot)
 
+
+# Neural network regression model using the PyBrain library.
 class NeuralNetworkRegression(RegressionModel):
     __metaclass__ = ABCMeta
 
-    """
-    Neural network regression model using the PyBrain library.
-    """
     def __init__(self, database, dataset, hidden_layer_multiplier):
         nnr = NeuralNetworkRegressor(hidden_layer_multiplier)
         RegressionModel.__init__(self, database, dataset, nnr, sparse=False)
@@ -177,18 +177,18 @@ class NeuralNetworkRegression(RegressionModel):
     def __str__(self):
         return 'nnr [neural network model]'
 
-class NeuralNetworkRegressor:
-    """
-    This is a wrapper around PyBrain's neural network library. This wrapper implements an API
-    similar to the interface for sklearn's regressors.
-    """
+class NeuralNetworkRegressor(None):
+    '''
+    This is a wrapper around PyBrain's neural network library. It
+    implements an API that mimics the interface for sklearn's regressors.
+    '''
 
     def __init__(self, hidden_layer_mutliplier):
         self.hidden_layer_multiplier = hidden_layer_mutliplier
 
     def fit(self, X, y):
         '''
-        Trains the model.
+        Train the model.
 
         :param X: list of numpy arrays representing the training samples.
         :param y: numpy array representing the training samples' true values.
@@ -222,20 +222,19 @@ class NeuralNetworkRegressor:
 
     def predict(self, x):
         '''
-        Predicts the output for sample x.
+        Predict the output for sample x.
 
         :param x: an array of one element, which is a numpy array defining one sample.
         :return array(y), where array is a numpy array
         '''
         return self.nnw.activate(x[0])
 
+
+# Regression model whose hyper-parameters are automatically tuned on training
+# data using grid search and cross-validation.
 class AutoTunedRegressionModel(RegressionModel):
     __metaclass__ = ABCMeta
 
-    """
-    Regression model whose hyperparameters are automatically tuned on training
-    data using cross-validation and grid search.
-    """
     def __init__(self, database, dataset, regressor_model, params, n_jobs=4, cv=3, sparse=True):
         sgd_regressor = grid_search.GridSearchCV(
             regressor_model,
@@ -257,6 +256,8 @@ class AutoTunedRegressionModel(RegressionModel):
 
 class LinearRegression(RegressionModel):
     def __init__(self, database, dataset):
+        # The parameters used here are the best of the values tested
+        # using grid-search.
         sgd_regressor = linear_model.SGDRegressor(
             n_iter=8000, # Takes many iterations to converge.
             alpha=0.0, # Works better without regularization.
@@ -273,7 +274,7 @@ class LinearRegression(RegressionModel):
 class AutoTunedLinearRegression(AutoTunedRegressionModel):
 
     def __init__(self, database, dataset):
-        # Define the parameter values to sweep across using grid-search.
+        # Define the parameter values to sweep across during grid-search.
         params = {
             'n_iter': [2000, 3000, 4000],
             'alpha': [0.0],
@@ -291,7 +292,7 @@ class AutoTunedLinearRegression(AutoTunedRegressionModel):
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
         svr_regressor = svm.SVR(
-            C=10000000.0, # NOTE: With lower C values, the SVR underfits.
+            C=10000000.0, # With lower C values, the SVR underfits.
             verbose=util.VERBOSE
         )
         RegressionModel.__init__(self, database, dataset, svr_regressor)
@@ -302,6 +303,7 @@ class SupportVectorRegression(RegressionModel):
 class AutoTunedSVR(AutoTunedRegressionModel):
 
     def __init__(self, database, dataset):
+        # Define parameters to sweep across during grid-search.
         params = {
             'C': [1000, 10000, 100000, 1000000, 10000000],
             'epsilon': [0.01, 0.1, 1, 10],
@@ -317,9 +319,9 @@ class AutoTunedSVR(AutoTunedRegressionModel):
 class DecisionTreeRegression(RegressionModel):
     def __init__(self, database, dataset):
         # NOTE: The decision tree is very sensitive to max_depth and
-        # min_samples_leaf parameters. These can control the degree
-        # of over / under-fitting. The parameters here are the best
-        # values tested using grid-search.
+        # min_samples_leaf parameters. These can control the degree of over /
+        # under-fitting. The parameters used here are the best of the values
+        # tested using grid-search.
         dt_regressor = tree.DecisionTreeRegressor(
             max_features=0.9,
             max_depth=100,
@@ -333,6 +335,7 @@ class DecisionTreeRegression(RegressionModel):
 class AutoTunedDecisionTree(AutoTunedRegressionModel):
 
     def __init__(self, database, dataset):
+        # Define parameters to sweep across during grid-search.
         params = {
             'max_features': [0.7, 0.9, 'sqrt'],
             'max_depth': [10, 50, 100],
@@ -345,7 +348,7 @@ class AutoTunedDecisionTree(AutoTunedRegressionModel):
     def __str__(self):
         return 'autodtr [auto tuned decision tree regression model]'
 
-# Predicts taxi pickups by averaging past aggregated pickup
+# Predict taxi pickups by averaging past aggregated pickup
 # data in the same zone and at the same hour of day.
 class BetterBaseline(Model):
 
@@ -358,12 +361,6 @@ class BetterBaseline(Model):
         pass
 
     def predict(self, test_example):
-        '''
-        Predicts the number of pickups at the specified time and location,
-        within a 1 hour interval and 0.01 x 0.01 degrees lat/long box.
-
-        See Model for comments on the parameters and return value.
-        '''
         num_pickups = 0.0
         pickup_time = test_example['start_datetime']
         example_id, zone_id = test_example['id'], test_example['zone_id']
@@ -385,7 +382,7 @@ class BetterBaseline(Model):
     def __str__(self):
         return "betterbaseline [baseline version 2]"
 
-# Predicts taxi pickups by averaging past aggregated pickup
+# Predict taxi pickups by averaging past aggregated pickup
 # data in the same zone.
 class Baseline(Model):
 
@@ -398,12 +395,6 @@ class Baseline(Model):
         pass
 
     def predict(self, test_example):
-        '''
-        Predicts the number of pickups at the specified time and location, 
-        within a 1 hour interval and 0.01 x 0.01 degrees lat/long box.
-
-        See Model for comments on the parameters and return value.
-        '''
         num_pickups = 0.0
         pickup_time = test_example['start_datetime']
         example_id, zone_id = test_example['id'], test_example['zone_id']

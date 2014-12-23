@@ -7,7 +7,9 @@ import util
 
 FEATURE_SELECTION = 'FeatureSelection'
 
-
+# This class encapsulates extracting features from data points.
+# The configuration file util.FEATURES_FILE determines which
+# features will be extracted.
 class FeatureExtractor(object):
 
     def __init__(self, use_sparse):
@@ -38,9 +40,9 @@ class FeatureExtractor(object):
         return feature_list
 
     def getFeatureVectors(self, X, is_test=False):
-        """
+        '''
         Transform input list of training examples from a list of dicts to a
-        numpy array or scipy sparse matrix for input into an sklearn ML model.
+        numpy array or scipy sparse matrix for input into an sklearn model.
 
         :param X: a list of training examples, represented as a list of dicts
                   where each dict maps column names to column values.
@@ -48,11 +50,11 @@ class FeatureExtractor(object):
         :param use_sparse: boolean for whether the return value should be
                            represented as a sparse matrix.
 
-        :return: the scipy matrix that represents the training data.
-        """
+        :return: scipy matrix representing the training data.
+        '''
         feature_dicts = [self.getFeatureDict(x) for x in X]
 
-        # If clustering is turned on, compute the centroids, then
+        # If clustering is enabled, compute the centroids, then
         # append the nearest centroid ID to each feature vector.
         if self.config.getboolean(FEATURE_SELECTION, 'Cluster'):
             self._appendClusterFeatures(feature_dicts, is_test)
@@ -64,10 +66,7 @@ class FeatureExtractor(object):
 
     def getFeatureNameIndices(self):
         """
-        Use this to know which indices in the sklearn vectors correspond
-        to which features.
-
-        :return: dict that maps feature names to indices.
+        :return: dict mapping feature names to indices.
         """
         return self.vectorizer.vocabulary_
 
@@ -85,7 +84,7 @@ class FeatureExtractor(object):
     def _extractZoneHourOfDay(self, x, feature_dict):
         feature_dict['Zone_HourOfDay'] = '%d_%02d' % (x['zone_id'], x['start_datetime'].hour)
 
-    # Concatenates the zone, day of week, and hour of day.
+    # Concatenate the zone, day of week, and hour of day.
     def _extractZoneDayHour(self, x, feature_dict):
         # Pad day of week with a leading zero.
         # Pad hours < 10 with a leading zero.
@@ -129,14 +128,14 @@ class FeatureExtractor(object):
             return rainfall
 
     def _appendClusterFeatures(self, feature_dicts, is_test):
-        """
-        If training, first runs k-means to compute the optimal centroids.
-        For each example in feature_dicts, appends the index of the nearest centroid
+        '''
+        If training, first run k-means to compute the optimal centroids.
+        For each example in feature_dicts, append the index of the nearest centroid
         as a feature.
 
         :param feature_dict: feature dictionary computed using _getFeatureDict().
         :param is_test: whether extracting features for testing or training purposes.
-        """
+        '''
         X_vectors = None
         if not is_test:
             X_vectors = self.precluster_vectorizer.fit_transform(feature_dicts)
@@ -148,12 +147,12 @@ class FeatureExtractor(object):
         [self._extractCluster({'cluster_id': Z[i]}, feature_dicts[i]) for i in xrange(len(Z))]
 
     def getFeatureDict(self, x):
-        """
+        '''
         Transform a training or testing example into a feature vector.
 
         :param x: a dict representing one row in a data table.
         :return: phi(x), a dict mapping feature names to feature values.
-        """
+        '''
         feature_dict = {}
         if self.config.getboolean(FEATURE_SELECTION, 'Zone'):
             self._extractZone(x, feature_dict)
