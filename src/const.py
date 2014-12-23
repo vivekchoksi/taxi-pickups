@@ -4,6 +4,5 @@ class Const(object):
     AGGREGATED_PICKUPS = 'pickups_aggregated_manhattan'
     DAILY_WEATHER_DATA = '../data/nyc_observed_weather_daily.csv'
     HOURLY_WEATHER_DATA = '../data/nyc_observed_weather_hourly.csv'
-    TRIP_DATA = 'trip_data'
     TRAIN_BATCH_SIZE = 40000
     TEST_BATCH_SIZE = 40000

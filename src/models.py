@@ -318,8 +318,8 @@ class DecisionTreeRegression(RegressionModel):
     def __init__(self, database, dataset):
         # NOTE: The decision tree is very sensitive to max_depth and
         # min_samples_leaf parameters. These can control the degree
-        # of over / under-fitting. Intuitively, these parameters should
-        # depend on the train set size. TODO: Tune these parameters.
+        # of over / under-fitting. The parameters here are the best
+        # values tested using grid-search.
         dt_regressor = tree.DecisionTreeRegressor(
             max_features=0.9,
             max_depth=100,

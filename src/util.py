@@ -13,11 +13,13 @@ def verbosePrint(*args):
            print arg,
         print
 
+# Convert zone_id to coordinates using a pre-determined formula.
 def zoneIdToLat(zone_id):
     return (int(zone_id) / 200 + 40 * 100) / 100.0
 
 def zoneIdToLong(zone_id):
     return (int(zone_id) % 200 - 75 * 100) / 100.0
+
 
 def currentTimeString():
     return datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -37,10 +39,6 @@ def getCrossValidator(num_iter, train_fraction, num_examples):
         train_ids = range(max_train_id)
         random.shuffle(train_ids)
         cv.append((np.array(train_ids), test_ids))
-
-    # for train_indices, test_indices in cv:
-    #     verbosePrint("Train:", train_indices)
-    #     verbosePrint("Test:", test_indices)
 
     return cv
 
