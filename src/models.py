@@ -177,7 +177,7 @@ class NeuralNetworkRegression(RegressionModel):
     def __str__(self):
         return 'nnr [neural network model]'
 
-class NeuralNetworkRegressor(None):
+class NeuralNetworkRegressor:
     '''
     This is a wrapper around PyBrain's neural network library. It
     implements an API that mimics the interface for sklearn's regressors.

@@ -19,47 +19,63 @@ pip install --user MySQL-python==1.2.5
 pip install --user pybrain
 ```
 
-#### MySQL setup
+#### Set up local MySQL database
 ```MySQL
-# Note: this setup is only necessary if you want to host the data
-# from your local MySQL server as opposed to setting up a remote
-# server.
-
 mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
 
-# If the data are downloaded as raw pickups, run:
-source /path/to/the/sql/script/load-trip-data.sql;
-source /path/to/the/sql/script/pickups-aggregated.sql;
 
-# If the data have already been transformed into csv format, run:
-source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql;
+# Note: before running any sql script, make sure to edit the source to have
+# file paths that are correct on your computer.
 
-# Make sure to modify the sql scripts before running them in order
-# to have the correct file paths for your computer.
+# To use our already aggregated data:
+source /absolute/path/to/repo/sql/load_aggregated_from_csv.sql;
+
+# To use the raw data downloaded from [Chris Whong's website](http://chriswhong.com/open-data/foil_nyc_taxi/):
+source /absolute/path/to/repo/sql/load_raw_from_csv.sql;
+source /absolute/path/to/repo/sql/aggregate_pickups.sql;
 ```
 
-#### Python packages setup
-`sudo pip install -r requirements.txt`
-
-#### Running the program
-Sample usage: `python taxi_pickups.py -m linear -l -n 1000 --features feature-sets/features1.cfg`  
-Run `python taxi_pickups.py --help` for more options.
-
-To submit a job to barley, run:
-`python submit_job_barley.py <model parameters>`  
-e.g. `python submit_job_barley.py -m autolinear -l -n 1000 -v --features feature-sets/features1.cfg`
-
-#### Connecting to AWS instance to host MySQL database
-
-To copy local MySQL database table to AWS instance:
+#### Download Python dependencies using [pip](https://pip.pypa.io/en/latest/)
 ```bash
+sudo pip install -r requirements.txt
+```
+
+#### Run the program
+```bash
+cd src
+
+# Sample usages...
+# ... train and test a model.
+python taxi_pickups.py --model linear --local --features feature-sets/features1.cfg --verbose
+
+# ... plot a learning curve.
+python plot_learning_curve.py --model linear --local --features feature-sets/features1.cfg --verbose
+
+# ... create plots describing the data set (e.g. plot number of pickups by hour of day).
+python plot.py --local
+
+# ... submit a job to Stanford's SGE system on the barley machines.
+python submit_job_barley.py <model-parameters>
+
+# For more options and details about parameters:
+python taxi_pickups.py --help
+python plot_learning_curve.py --help
+python plot.py --help
+```
+
+
+#### Set up remote MySQL database using AWS
+
+First, set up an AWS instance.
+
+```bash
+# Copy local MySQL database table to AWS instance:
 sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups \
 pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
 ```
 
-To connect to the remote MySQL instance from your machine:
-```bash
+# Connect to the remote MySQL instance from your machine:
 mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
 ```
