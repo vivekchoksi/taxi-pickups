@@ -12,9 +12,7 @@ class Plotter(object):
 
     def __init__(self, database, table_name):
         self.db = database
-        num_examples = Const.DATASET_SIZE
-        query_string = ('SELECT * FROM %s limit %d') \
-                        % (table_name, num_examples)
+        query_string = ('SELECT * FROM ' + table_name)
         self.data = self.db.execute_query(query_string)
         matplotlib.rcParams.update({'font.size': 18})
 

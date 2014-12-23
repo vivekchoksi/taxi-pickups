@@ -119,7 +119,7 @@ def getOptions():
                       action='store_true', dest='verbose', default=False,
                       help='print verbose output')
     parser.add_option('-n', '--numexamples', type='int', dest='num_examples',
-                      default=Const.DATASET_SIZE, help='use a dataset of size NUM',
+                      default=sys.maxint, help='use a dataset of size NUM',
                       metavar='NUM')
     parser.add_option('-l', '--local',
                       action='store_true', dest='local', default=False,

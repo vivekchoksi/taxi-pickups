@@ -12,7 +12,7 @@ import numpy as np
 from const import Const
 from feature_extractor import FeatureExtractor
 
-# Interface for our learning models.
+# Interface for the learning models.
 class Model(object):
     __metaclass__ = ABCMeta
 
@@ -39,7 +39,7 @@ class Model(object):
     def __str__(self):
         pass
 
-# This class can perform training and testing on the input regressor
+# This class can perform training and testing on the input regression
 # model. Specific model classes can subclass from RegressionModel.
 class RegressionModel(Model):
     __metaclass__ = ABCMeta
@@ -50,7 +50,7 @@ class RegressionModel(Model):
         self.table_name = Const.AGGREGATED_PICKUPS
         self.regressor = regressor_model
 
-        # sparse determines whether data should be represented as sparse scipy
+        # `sparse` determines whether data should be represented as sparse scipy
         # matrices as opposed to dense ones. (Some models such as the decision tree
         # regression model require a dense representation.)
         self.feature_extractor = FeatureExtractor(sparse)
@@ -119,7 +119,7 @@ class RegressionModel(Model):
         def printFeatureWeight(feature_weight):
             print '%s\t%f' % (feature_weight[0], feature_weight[1])
 
-        print ('Feature\t\tWeight')
+        print 'Feature\t\tWeight'
 
         if n is None:
             [printFeatureWeight(feature_weight) for feature_weight in feature_weights]
@@ -214,7 +214,7 @@ class NeuralNetworkRegressor:
         self.trainer = BackpropTrainer(self.nnw, dataset=data_set)
 
         for i in xrange(3):
-            error = self.trainer.train() #UntilConvergence()
+            error = self.trainer.train()
             print 'Iteration: %d\tError: %f' % (i, error)
 
         if util.VERBOSE:
@@ -233,8 +233,8 @@ class AutoTunedRegressionModel(RegressionModel):
     __metaclass__ = ABCMeta
 
     """
-    Regression model whose Hyperparameters are automatically tuned on training
-    data through cross-validation and grid search.
+    Regression model whose hyperparameters are automatically tuned on training
+    data using cross-validation and grid search.
     """
     def __init__(self, database, dataset, regressor_model, params, n_jobs=4, cv=3, sparse=True):
         sgd_regressor = grid_search.GridSearchCV(
@@ -273,6 +273,7 @@ class LinearRegression(RegressionModel):
 class AutoTunedLinearRegression(AutoTunedRegressionModel):
 
     def __init__(self, database, dataset):
+        # Define the parameter values to sweep across using grid-search.
         params = {
             'n_iter': [2000, 3000, 4000],
             'alpha': [0.0],
@@ -290,7 +291,7 @@ class AutoTunedLinearRegression(AutoTunedRegressionModel):
 class SupportVectorRegression(RegressionModel):
     def __init__(self, database, dataset):
         svr_regressor = svm.SVR(
-            C=10000000.0, # With lower C values, the SVR underfits.
+            C=10000000.0, # NOTE: With lower C values, the SVR underfits.
             verbose=util.VERBOSE
         )
         RegressionModel.__init__(self, database, dataset, svr_regressor)
@@ -354,14 +355,6 @@ class BetterBaseline(Model):
         self.table_name = Const.AGGREGATED_PICKUPS
 
     def train(self):
-        '''
-        The SQL script to generate the aggregated pickups table is commented out
-        because we only need to run it once.
-
-        See Model for comments on the parameters and return value.
-        '''
-        # Note: this line of code isn't tested yet.
-        # os.system('mysql -u root < pickups-aggregated.sql')
         pass
 
     def predict(self, test_example):
@@ -402,14 +395,6 @@ class Baseline(Model):
         self.table_name = Const.AGGREGATED_PICKUPS
 
     def train(self):
-        '''
-        The SQL script to generate the aggregated pickups table is commented out
-        because we only need to run it once.
-
-        See Model for comments on the parameters and return value.
-        '''
-        # Note: this line of code isn't tested yet.
-        # os.system('mysql -u root < pickups-aggregated.sql')
         pass
 
     def predict(self, test_example):
