@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 '''
-This file automates submitting a taxi_pickups.py run to barley.
+This file automates submitting a plot_learning_curve.py run to Stanford's
+SGE system on the barley machines.
 
 You can change the parameters to the qsub command below.
 
 Sample usage:
-    python submit_job_barley.py -m autolinear -n 1000 -v
+    python submit_learning_curve_job_barley.py -m autolinear -n 1000 -v --features feature-sets/features1.cfg
 
 '''
 
@@ -22,7 +23,6 @@ args = ' '.join(sys.argv[1:])
 #   -l ... what follows is resource request parameters
 #   mem_free=1G ... request 1 GB per core
 #   -pe shm 4 ... request 4 cores
-# os.system('qsub -l mem_free=2G -pe shm 4 -N taxi_pickups_linear run_taxi_pickups.sh')
-os.system("qsub -v args='%s' -l mem_free=1G -pe shm 4 -N learning_curves " \
-    "run_learning_curves_barley.sh" % args)
+os.system('qsub -v args="%s" -l mem_free=1G -pe shm 4 -N learning_curves ' \
+    'run_learning_curves_barley.sh' % args)
 

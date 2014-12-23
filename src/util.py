@@ -44,7 +44,7 @@ def getCrossValidator(num_iter, train_fraction, num_examples):
 
 if __name__ == '__main__':
     '''
-    Usage: util.py zone_id
+    Usage: python util.py <zone_id>
     Hacky code to convert zone_id to lat/long coordinates.
 
     Paste results here to view the box region in Google Maps:

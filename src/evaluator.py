@@ -46,6 +46,8 @@ class Evaluator(object):
 
         # Plot the feature weights specific to a zone.
         if self.print_feature_weights:
+            # These zones and time were hard-coded since they were
+            # hand-selected to contrast with each other.
             start_datetime = datetime.datetime(2013, 4, 7)
             self._plotFeatureWeights(14901, start_datetime)
             self._plotFeatureWeights(16307, start_datetime)

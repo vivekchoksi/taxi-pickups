@@ -7,10 +7,10 @@
 # Tell grid engine to merge stdout and stderr streams.
 #$ -j y
 
-# Mail to this address.
-#$ -M jgrinber@stanford.edu
-# Send mail on beginning, ending, or suspension of job.
-#$ -m bes
+# # Mail to this address.
+# #$ -M <your-email-address>@stanford.edu
+# # Send mail on beginning, ending, or suspension of job.
+# #$ -m bes
 
 # Tell grid engine what directory to use.
 # cwd means current directory.
@@ -18,11 +18,9 @@
 
 echo ${args}
 
-# Install MySQLdb dependency.
+# Install dependencies.
 pip install --user MySQL-python==1.2.5
-
 pip install --user pybrain
 
-# CONFIGURE THIS TO BE THE COMMAND YOU WANT TO RUN.
 time python taxi_pickups.py ${args}
 
