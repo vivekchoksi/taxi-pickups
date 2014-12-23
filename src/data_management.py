@@ -8,8 +8,8 @@ class Database(object):
 
     def __init__(self, is_local):
         '''
-        :param is_local: boolean indicating whether to use a local MySQL
-                database rather than a remote one.
+        :param is_local: boolean indicating whether to use the local MySQL
+                server instance rather than a remote one.
         '''
         self.is_local = is_local
         self._connect()

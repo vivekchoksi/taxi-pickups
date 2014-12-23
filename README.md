@@ -9,7 +9,7 @@ to run the linear model on 1000 data points:
 
 ```bash
 cd src
-python taxi_pickups.py -m linear -n 1000 --features features1.cfg -v
+python taxi_pickups.py -m linear -n 1000 --features feature-sets/features1.cfg -v
 
 # If you get a dependencies error, try running the following:
 sudo pip install -r requirements.txt
@@ -44,12 +44,12 @@ source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql;
 `sudo pip install -r requirements.txt`
 
 #### Running the program
-Sample usage: `python taxi_pickups.py -m linear -l -n 1000 --features features1.cfg`  
+Sample usage: `python taxi_pickups.py -m linear -l -n 1000 --features feature-sets/features1.cfg`  
 Run `python taxi_pickups.py --help` for more options.
 
 To submit a job to barley, run:
 `python submit_job_barley.py <model parameters>`  
-e.g. `python submit_job_barley.py -m autolinear -l -n 1000 -v --features features1.cfg`
+e.g. `python submit_job_barley.py -m autolinear -l -n 1000 -v --features feature-sets/features1.cfg`
 
 #### Connecting to AWS instance to host MySQL database
 

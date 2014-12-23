@@ -9,6 +9,11 @@ import taxi_pickups
 from const import Const
 
 class Plotter(object):
+    '''
+    The Plotter class is for making plots describing the entire dataset.
+    Usage:
+        python plot.py --local
+    '''
 
     def __init__(self, database, table_name):
         self.db = database
@@ -18,7 +23,7 @@ class Plotter(object):
 
     def plotNumPickups(self):
         '''
-        Plot a histogram showing the distribution of true number of pickups.
+        Plot a histogram showing the distribution of true numbers of pickups.
         '''
         # Get data into array.
         num_pickups = []
@@ -33,7 +38,8 @@ class Plotter(object):
 
         # Label histogram.
         plt.title('Histogram of the number of taxi pickups')
-        plt.xlabel('Number of taxi pickups in any zone and hour-long time slot')
+        plt.xlabel('Number of taxi pickups in any zone and hour-long ' +
+                   'time slot')
         plt.ylabel('Frequency')
 
         plt.show()
@@ -58,7 +64,7 @@ class Plotter(object):
         width = 0.7
         fig, ax = plt.subplots()
         ax.bar(days_in_week + width / 2.0, num_pickups, width=width, alpha=0.5)
-        ax.set_xticks(days_in_week+width)
+        ax.set_xticks(days_in_week + width)
 
         # Label bar chart.
         plt.title('Number of taxi pickups by day of week')
@@ -103,9 +109,8 @@ class Plotter(object):
 
     def plotNumPickupsByZone(self):
         '''
-        Plot a histogram showing the distribution of true number of pickups by zone.
-        Also, print out the number of zones with fewer than some threshold of
-        pickups during the entire month.
+        Plot a histogram showing the distribution of true number of pickups by
+        zone.
         '''
         # Gather data.
         num_pickups_by_zone = {}
@@ -113,7 +118,8 @@ class Plotter(object):
 
         for row in self.data:
             zone_id = str(row['zone_id'])
-            num_pickups_by_zone[zone_id] = num_pickups_by_zone.get(zone_id, 0) + row['num_pickups']
+            num_pickups_by_zone[zone_id] = \
+                num_pickups_by_zone.get(zone_id, 0) + row['num_pickups']
 
         for num_pickups in num_pickups_by_zone.values():
             num_pickups_list.append(num_pickups)
@@ -131,11 +137,17 @@ class Plotter(object):
         plt.show()
 
 def main(args):
-    database = taxi_pickups.Database(is_local=False)
+    parser = OptionParser()
+    parser.add_option('-l', '--local',
+                      action='store_true', dest='local', default=False,
+                      help='use local as opposed to remote MySQL server')
+    options, args = parser.parse_args()
+
+    database = taxi_pickups.Database(is_local=options.local)
     plotter = Plotter(database, Const.AGGREGATED_PICKUPS)
-    # plotter.plotNumPickups()
-    # plotter.plotNumPickupsByDay()
-    # plotter.plotNumPickupsByHour()
+    plotter.plotNumPickups()
+    plotter.plotNumPickupsByDay()
+    plotter.plotNumPickupsByHour()
     plotter.plotNumPickupsByZone()
 
 if __name__ == '__main__':

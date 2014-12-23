@@ -1,5 +1,14 @@
 #!/usr/bin/python
 
+'''
+Train and evaluate a regression model.
+
+Sample usage:
+    python taxi_pickups.py -m linear -l -v --features feature-sets/features1.cfg
+
+Run python taxi_pickups.py --help for more information.
+'''
+
 import os
 from optparse import OptionParser
 from models import *
@@ -39,7 +48,7 @@ def getOptions():
     parser.add_option('-m', '--model', dest='model',
                       help='write report to MODEL', metavar='MODEL')
     parser.add_option('--features', dest='features_file',
-                      help='name of the features config file; e.g. features1.cfg')
+                      help='name of the features config file; e.g. feature-sets/features1.cfg')
     parser.add_option('-v', '--verbose',
                       action='store_true', dest='verbose', default=False,
                       help='print verbose output')
@@ -69,7 +78,7 @@ def getOptions():
 
     if os.path.splitext(options.features_file)[1] != '.cfg' or \
             not os.path.isfile(options.features_file):
-        print 'Invalid feature file name. Must be a valid .cfg file.'
+        print 'Invalid feature file name. Must be a path to a valid .cfg file.'
         print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
 

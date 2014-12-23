@@ -17,7 +17,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
-# The Evaluator class evaluates a trained model.
+# The Evaluator class evaluates a trained model on the test set, and can
+# compute error metrics and generate plots.
 class Evaluator(object):
 
     def __init__(self, model, dataset, plot_error, print_feature_weights):
@@ -58,11 +59,10 @@ class Evaluator(object):
 
     def _evaluatePredictions(self, true_num_pickups, predicted_num_pickups):
         '''
-        Prints some metrics on how well the model performed, including the RMSD.
+        Print some metrics on how well the model performed, including the RMSD.
 
         :param predicted_num_pickups: List of predicted num_pickups.
         :param true_num_pickups: List of observed num_pickups.
-
         '''
         assert(len(true_num_pickups) == len(predicted_num_pickups))
 
@@ -85,7 +85,7 @@ class Evaluator(object):
 
     def _printRandomTrainingExamples(self, true_num_pickups, predicted_num_pickups, num_examples=30):
         '''
-        Prints out the true and predicted values for a small set of randomly
+        Print out the true and predicted values for a small set of randomly
         selected training examples.
         '''
         print '\n\tComparison between true and predicted num pickups...'
@@ -106,8 +106,9 @@ class Evaluator(object):
         :param start_datetime: datetime at which to start extracting features.
         :param num_hours: number of hours to plot
 
-        Generates a stacked bar chart of all the features weights used to predict the number of pickups in zone zone_id
-        for each hour of the week (from Sunday 12am to Saturday 11pm).
+        Generate a stacked bar chart of all the features weights used to
+        predict the number of pickups in zone zone_id for each hour of the
+        week (from Sunday 12am to Saturday 11pm).
         '''
         if not hasattr(self.model, 'feature_extractor'):
             print '\tCannot plot features for the model.'
@@ -127,14 +128,14 @@ class Evaluator(object):
 
         # For each data point in the time range, get the weight for each of its features.
         # plot_values is a mapping from feature templates to a list of all their values at each time step.
-        #   EX: plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
+        #   e.g. plot_values['Zone_HourOfDay'] = [324.4565, 221.498, ... ]
         plot_values = {}
         for time_step in xrange(num_hours):
             curr_datetime = start_datetime + datetime.timedelta(hours=time_step)
             test_example = {'zone_id': zone_id, 'start_datetime': curr_datetime}
 
             # test_example_features is a mapping from feature templates to their identifiers
-            #   EX: test_example_features['Zone_HourOfDay'] = 15402_14
+            #   e.g. test_example_features['Zone_HourOfDay'] = 15402_14
             test_example_features = self.model.feature_extractor.getFeatureDict(test_example)
 
             for feature_template, identifier in test_example_features.iteritems():
@@ -144,23 +145,10 @@ class Evaluator(object):
                 if feature_name in feature_weights:
                     plot_values[feature_template][time_step] = feature_weights[feature_name]
 
-        # Print out feature weight values, where each column represents a feature template, and each row
-        # is the weights at one hour. This is useful for copy and pasting into a CSV file.
-        '''
-        for feature_template in plot_values.keys():
-            print '%s,' % feature_template,
-        print
-
-        for time_step in xrange(num_hours):
-            for feature_template in plot_values.keys():
-                print '%s,' % plot_values[feature_template][time_step],
-            print
-        print
-        '''
-
         # Generate stacked bar chart, whose series are the feature templates.
 
-        # Order these feature templates first, then all the remaining feature templates in plot_values in any order.
+        # Order these feature templates first, then all the remaining feature
+        # templates in plot_values in any order.
         feature_templates = ['Zone', 'DayOfWeek', 'HourOfDay', 'Zone_DayOfWeek', 'Zone_HourOfDay']
         for feature_template in list(feature_templates):
             if feature_template not in plot_values.keys():
@@ -174,6 +162,7 @@ class Evaluator(object):
         series_index = 0
         width = 1
         bars = []
+
         # Plot positive values for all series.
         bottom_values = [0] * num_hours
         for feature_template in feature_templates:
@@ -212,13 +201,14 @@ class Evaluator(object):
         plt.xticks(np.arange(0, num_hours + 1, 12))
         plt.grid(True)
         plt.legend(bars, feature_templates)
-        plt.savefig('../outfiles/feature_weights_zone_%d_%s.png' % (zone_id, util.currentTimeString()), bbox_inches='tight')
-        # plt.show()
+
+        plt.savefig((Const.OUTFILE_DIRECTORY + 'feature_weights_zone_%d_%s.png') % \
+                    (zone_id, util.currentTimeString()), bbox_inches='tight')
         plt.close()
 
     def _plotPredictionError(self, true_num_pickups, predicted_num_pickups):
         '''
-        Generates a scatter plot. The true number of pickups is plotted against the prediction error for
+        Generate a scatter plot. The true number of pickups is plotted against the prediction error for
         each data point. The prediction error is defined as the absolute difference between the true value
         and the predicted value.
         '''
@@ -227,13 +217,14 @@ class Evaluator(object):
 
         error = [abs(true_num_pickups[i] - predicted_num_pickups[i]) for i in xrange(len(true_num_pickups))]
 
-        # Set area of all bubbles to be 70.
+        # Set bubble area and opacity, and create scatter plot.
         area = [70]*len(error)
-        # plt.scatter(true_num_pickups, error, s=area, alpha=0.2, edgecolors='none')
-        plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2, edgecolors='none', label='actual predictions')
+        plt.scatter(true_num_pickups, predicted_num_pickups, s=area, alpha=0.2,
+                    edgecolors='none', label='actual predictions')
 
         X_line = range(max(true_num_pickups))
         plt.plot(X_line, X_line, 'g--', color='0.5', label='perfect prediction line')
+
         # Decorate plot.
         plt.grid(True)
         plt.ylabel('Predicted Number of Pickups')
@@ -241,11 +232,10 @@ class Evaluator(object):
         plt.title('Predicted vs. True Number of Pickups  \nModel: %s' % self.model)
 
         plt.legend(loc='best')
-        # plt.yscale('log')
-        # plt.xscale('log')
 
         # Hard-code xmin, ymin to be -10, and constrain xmax, ymax to be the greater of the two.
-        xmin ,xmax, ymin, ymax = plt.axis()
+        xmin, xmax, ymin, ymax = plt.axis()
         plt.axis((-10, max(xmax, ymax), -10, max(xmax, ymax)))
-        plt.savefig('../outfiles/true_vs_predicted_scatter_%s.png' % (util.currentTimeString()), bbox_inches='tight')
+        plt.savefig((Const.OUTFILE_DIRECTORY + 'true_vs_predicted_scatter_%s.png') %
+                    (util.currentTimeString()), bbox_inches='tight')
         plt.close()
