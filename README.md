@@ -19,13 +19,12 @@ pip install --user MySQL-python==1.2.5
 pip install --user pybrain
 ```
 
-MySQL setup
-==============
+#### MySQL setup
+```MySQL
 # Note: this setup is only necessary if you want to host the data
 # from your local MySQL server as opposed to setting up a remote
 # server.
 
-```MySQL
 mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
@@ -41,25 +40,23 @@ source /path/to/the/sql/script/load_pickups_aggregated_from_csv.sql;
 # to have the correct file paths for your computer.
 ```
 
-Python packages setup
-======================
+#### Python packages setup
 `sudo pip install -r requirements.txt`
 
-Running the program
-====================
-Sample usage: `python taxi_pickups.py -m linear -l -n 1000 --features features1.cfg`
-Run `python taxi_pickups.py --help` for more options
+#### Running the program
+Sample usage: `python taxi_pickups.py -m linear -l -n 1000 --features features1.cfg`  
+Run `python taxi_pickups.py --help` for more options.
 
 To submit a job to barley, run:
-`python submit_job_barley.py <model parameters>`
+`python submit_job_barley.py <model parameters>`  
 e.g. `python submit_job_barley.py -m autolinear -l -n 1000 -v --features features1.cfg`
 
-Useful Commands
-=================
+#### Connecting to AWS instance to host MySQL database
 
 To copy local MySQL database table to AWS instance:
 ```bash
-sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
+sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups \
+pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
 ```
 
 To connect to the remote MySQL instance from your machine:
