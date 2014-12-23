@@ -6,7 +6,6 @@ from sklearn import linear_model, svm, tree, grid_search
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.datasets import SupervisedDataSet
-from pybrain.structure.modules.tanhlayer import TanhLayer
 import util
 from time import time
 import numpy as np
