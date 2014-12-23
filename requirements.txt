@@ -2,3 +2,5 @@ MySQL-python==1.2.5
 numpy
 scipy
 scikit-learn
+matplotlib
+pybrain
