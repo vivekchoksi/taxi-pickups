@@ -1,23 +1,17 @@
 Description
 ==============
-Repository for our CS221 project for Autumn 2014.
+This repository hosts code and data for our final project for CS221 (Stanford class on artificial intelligence)
+in autumn 2014.
 
-Quick description
-=================
-If you wish to run our code right away, you can execute the following
-to run the linear model on 1000 data points:
+The ability to predict taxi ridership could present valuable insights to city planners and taxi dispatchers in
+answering questions such as how to position cabs where they are most needed, how many taxis to dispatch, and how
+ridership varies over time. Our project focuses on predicting the number of taxi pickups given a one-hour time
+window and a location within New York City. This project concept is inspired by the MIT 2013-2014 Big Data
+Challenge, which proposed the same problem for taxicabs in Boston.
 
-```bash
-cd src
-python taxi_pickups.py -m linear -n 1000 --features feature-sets/features1.cfg -v
 
-# If you get a dependencies error, try running the following:
-sudo pip install -r requirements.txt
-
-# Or the following if you are on Stanford's corn machines:
-pip install --user MySQL-python==1.2.5
-pip install --user pybrain
-```
+Instructions on how to run
+===========================
 
 #### Set up local MySQL database
 ```MySQL
@@ -25,16 +19,30 @@ mysql -u root
 CREATE DATABASE taxi_pickups;
 use taxi_pickups;
 
-
 # Note: before running any sql script, make sure to edit the source to have
 # file paths that are correct on your computer.
 
 # To use our already aggregated data:
 source /absolute/path/to/repo/sql/load_aggregated_from_csv.sql;
 
-# To use the raw data downloaded from [Chris Whong's website](http://chriswhong.com/open-data/foil_nyc_taxi/):
+# Alternatively, to use raw data that you have downloaded from Chris Whong's website
+# (http://chriswhong.com/open-data/foil_nyc_taxi/):
 source /absolute/path/to/repo/sql/load_raw_from_csv.sql;
 source /absolute/path/to/repo/sql/aggregate_pickups.sql;
+```
+
+#### Set up remote MySQL database using AWS (optional)
+First, set up an AWS instance.
+
+Next, copy local MySQL database table to the AWS instance.
+```bash
+sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups \
+pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
+```
+
+Finally, connect to the remote MySQL instance from your machine.
+```bash
+mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
 ```
 
 #### Download Python dependencies using [pip](https://pip.pypa.io/en/latest/)
@@ -65,17 +73,3 @@ python plot_learning_curve.py --help
 python plot.py --help
 ```
 
-
-#### Set up remote MySQL database using AWS
-
-First, set up an AWS instance.
-
-```bash
-# Copy local MySQL database table to AWS instance:
-sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups \
-pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
-```
-
-# Connect to the remote MySQL instance from your machine:
-mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
-```
