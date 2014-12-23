@@ -41,7 +41,7 @@ class Model(object):
         pass
 
 # This class can perform training and testing on the input regressor
-# model. Specific model classes can subclass from `RegressionModel`.
+# model. Specific model classes can subclass from RegressionModel.
 class RegressionModel(Model):
     __metaclass__ = ABCMeta
 
@@ -165,7 +165,7 @@ class RegressionModel(Model):
             'is installed on the corn machines.'
         tree.export_graphviz(self.regressor, out_file=out_file_dot)
 
-class NueralNetworkRegression(RegressionModel):
+class NeuralNetworkRegression(RegressionModel):
     __metaclass__ = ABCMeta
 
     """
@@ -176,7 +176,7 @@ class NueralNetworkRegression(RegressionModel):
         RegressionModel.__init__(self, database, dataset, nnr, sparse=False)
 
     def __str__(self):
-        return 'neural network [neural network model]'
+        return 'nnr [neural network model]'
 
 class NeuralNetworkRegressor:
     """

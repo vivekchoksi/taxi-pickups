@@ -7,6 +7,7 @@ import util
 
 FEATURE_SELECTION = 'FeatureSelection'
 
+
 class FeatureExtractor(object):
 
     def __init__(self, use_sparse):
@@ -15,11 +16,12 @@ class FeatureExtractor(object):
         self.vectorizer = DictVectorizer(sparse=use_sparse)
 
         if self.config.getboolean(FEATURE_SELECTION, 'Cluster'):
-            self.precluster_vectorizer = DictVectorizer(sparse=use_sparse) # Vectorizer without cluster features.
+            # Vectorizer without cluster features.
+            self.precluster_vectorizer = DictVectorizer(sparse=use_sparse)
             self.clusterer = MiniBatchKMeans(n_clusters=15, init='k-means++')
         if self.config.getboolean(FEATURE_SELECTION, 'DailyWeather') or \
-            self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather') or \
-            self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_HourlyWeather'):
+                self.config.getboolean(FEATURE_SELECTION, 'HourlyWeather') or \
+                self.config.getboolean(FEATURE_SELECTION, 'Zone_DayOfWeek_HourlyWeather'):
             self.weather_data = Weather()
 
         if util.VERBOSE:
@@ -37,14 +39,14 @@ class FeatureExtractor(object):
 
     def getFeatureVectors(self, X, is_test=False):
         """
-        Transform the input list of training examples from a list of dicts to a
+        Transform input list of training examples from a list of dicts to a
         numpy array or scipy sparse matrix for input into an sklearn ML model.
 
-        :param X: a list of training examples, represented as a list of dicts where
-                  each dict maps column names to column values.
+        :param X: a list of training examples, represented as a list of dicts
+                  where each dict maps column names to column values.
 
         :param use_sparse: boolean for whether the return value should be
-                    represented as a sparse matrix.
+                           represented as a sparse matrix.
 
         :return: the scipy matrix that represents the training data.
         """
@@ -73,27 +75,28 @@ class FeatureExtractor(object):
         feature_dict['Zone'] = str(x['zone_id'])
 
     def _extractHourOfDay(self, x, feature_dict):
-        feature_dict['HourOfDay'] = '%02d' % x['start_datetime'].hour # Pad hours < 10 with a leading zero.
+        # Pad hours < 10 with a leading zero.
+        feature_dict['HourOfDay'] = '%02d' % x['start_datetime'].hour
 
     def _extractDayOfWeek(self, x, feature_dict):
-        feature_dict['DayOfWeek'] = '%02d' % x['start_datetime'].weekday() # Pad day of week with a leading zero.
+        # Pad day of week with a leading zero.
+        feature_dict['DayOfWeek'] = '%02d' % x['start_datetime'].weekday()
 
     def _extractZoneHourOfDay(self, x, feature_dict):
         feature_dict['Zone_HourOfDay'] = '%d_%02d' % (x['zone_id'], x['start_datetime'].hour)
 
     # Concatenates the zone, day of week, and hour of day.
     def _extractZoneDayHour(self, x, feature_dict):
-        feature_dict['Zone_DayOfWeek_Hour'] = '%d_%02d_%02d' % (x['zone_id'],
-                                                                x['start_datetime'].weekday(), # Pad day of week with a leading zero.
-                                                                x['start_datetime'].hour) # Pad hours < 10 with a leading zero.
+        # Pad day of week with a leading zero.
+        # Pad hours < 10 with a leading zero.
+        feature_dict['Zone_DayOfWeek_Hour'] = '%d_%02d_%02d' % \
+            (x['zone_id'], x['start_datetime'].weekday(), x['start_datetime'].hour)
 
     def _extractZoneDayOfWeekHourlyWeather(self, x, feature_dict):
         hourly_weather = self.weather_data.getHourlyWeather(x['start_datetime'])
         rainfallValue = self._getHourlyRainfallValue(hourly_weather['PRCP'], True)
-        feature_dict['Zone_DayOfWeek_HourlyRainfall'] = '%d_%02d_%s' % (x['zone_id'],
-                                                                x['start_datetime'].weekday(),
-                                                                rainfallValue)
-
+        feature_dict['Zone_DayOfWeek_HourlyRainfall'] = '%d_%02d_%s' % \
+            (x['zone_id'], x['start_datetime'].weekday(), rainfallValue)
 
     def _extractCluster(self, x, feature_dict):
         feature_dict['Cluster'] = str(x['cluster_id'])
