@@ -126,7 +126,8 @@ def getOptions():
     '''
     parser = OptionParser()
     parser.add_option('-m', '--model', dest='model',
-                      help='write report to MODEL', metavar='MODEL')
+                      help='regression model to use: baseline, betterbaseline, ' +
+                           'linear, svr, dtr, or nnr')
     parser.add_option('-v', '--verbose',
                       action='store_true', dest='verbose', default=False,
                       help='print verbose output')

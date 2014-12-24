@@ -46,7 +46,8 @@ def getOptions():
     '''
     parser = OptionParser()
     parser.add_option('-m', '--model', dest='model',
-                      help='write report to MODEL', metavar='MODEL')
+                      help='regression model to use: baseline, betterbaseline, ' +
+                           'linear, svr, dtr, nnr, autolinear, autodtr, or autosvr')
     parser.add_option('--features', dest='features_file',
                       help='name of the features config file; e.g. feature-sets/features1.cfg')
     parser.add_option('-v', '--verbose',
@@ -72,7 +73,7 @@ def getOptions():
     options, args = parser.parse_args()
 
     if not options.model or not options.features_file:
-        print 'Usage: \tpython taxi_pickups.py -m <model-name> --features \<features-filename.cfg>'
+        print 'Usage: \tpython taxi_pickups.py -m <model-name> --features <features-filename.cfg>'
         print '\nTo see more options, run python taxi_pickups.py --help'
         exit(1)
 
