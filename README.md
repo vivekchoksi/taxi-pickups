@@ -1,6 +1,6 @@
 Description
 ==============
-This repository hosts code and data for our final project for CS221 (Stanford class on artificial intelligence)
+This repository hosts code and data for our final project for Stanford's CS221 (artificial intelligence)
 in autumn 2014.
 
 The ability to predict taxi ridership could present valuable insights to city planners and taxi dispatchers in
@@ -8,6 +8,10 @@ answering questions such as how to position cabs where they are most needed, how
 ridership varies over time. Our project focuses on predicting the number of taxi pickups given a one-hour time
 window and a location within New York City. This project concept is inspired by the MIT 2013-2014 Big Data
 Challenge, which proposed the same problem for taxicabs in Boston.
+
+This taxi pickup prediction task can be framed as a supervised machine learning regression problem. We implemented
+and evaluated three different models: linear least-squares regression, support vector regression, and decision tree
+regression. More information on our models, features, and results can be found in final_paper.pdf.
 
 
 Instructions on how to run
