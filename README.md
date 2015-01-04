@@ -36,17 +36,20 @@ source /absolute/path/to/repo/sql/aggregate_pickups.sql;
 ```
 
 #### Set up remote MySQL database using AWS (optional)
-First, set up an AWS instance.
+1. Set up an AWS account.
 
-Next, copy local MySQL database table to the AWS instance.
+2. Create a MySQL database instance according to the instructions here: http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_CreateInstance.html.
+
+3. Copy local MySQL database table (created from following the instructions above) to the AWS instance.
 ```bash
 sudo mysqldump -u root --single-transaction --compress --order-by-primary taxi_pickups \
-pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
+pickups_aggregated | mysql -h <instance name>.rds.amazonaws.com -P 3306 \
+-u <mysql username on db instance> -p taxi_pickups
 ```
 
-Finally, connect to the remote MySQL instance from your machine.
+To connect to the remote MySQL instance from your machine:
 ```bash
-mysql -h <instance name>.rds.amazonaws.com -P 3306 -u nyc -p taxi_pickups
+mysql -h <instance name>.rds.amazonaws.com -P 3306 -u <mysql username on db instance> -p taxi_pickups
 ```
 
 #### Download Python dependencies using [pip](https://pip.pypa.io/en/latest/)
